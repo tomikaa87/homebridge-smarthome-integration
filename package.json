@@ -1,6 +1,6 @@
 {
   "private": true,
-  "displayName": "Smart Home Hntegration",
+  "displayName": "Smart Home Integration",
   "name": "homebridge-smarthome-integration",
   "version": "0.0.0",
   "description": "Homebridge integration for various smart home devices",

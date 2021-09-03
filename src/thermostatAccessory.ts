@@ -15,6 +15,7 @@ export class ThermostatAccessory {
       targetTemperature: 0,
       heatingActive: false,
       boostActive: false,
+      heatingMode: 0,
     };
 
     constructor(
@@ -53,6 +54,10 @@ export class ThermostatAccessory {
 
       this.service.getCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState)
         .onGet(this.getCurrentHeatingState.bind(this));
+
+      this.service.getCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState)
+        .onGet(this.getTargetHeatingState.bind(this))
+        .onSet(this.setTargetHeatingState.bind(this));
     }
 
     setupBoostSwitchService(): void {
@@ -66,6 +71,7 @@ export class ThermostatAccessory {
       this.mqttClient.subscribe('thermostat/temp/current', undefined);
       this.mqttClient.subscribe('thermostat/temp/active', undefined);
       this.mqttClient.subscribe('thermostat/heating/active', undefined);
+      this.mqttClient.subscribe('thermostat/heating/mode', undefined);
     }
 
     handleIncomingMqttMessage(topic: string, payload: Buffer): void {
@@ -90,6 +96,13 @@ export class ThermostatAccessory {
           this.platform.Characteristic.CurrentHeatingCoolingState,
           this.getHeatingState(this.states.heatingActive),
         );
+      }
+
+      if (topic.toLowerCase() === 'thermostat/heating/mode') {
+        this.states.heatingMode = Number.parseInt(payload.toString());
+        this.log.info(`handleIncomingMqttMessage: heatingMode=${this.states.heatingMode}`);
+        const state = this.getTargetHeatingStateFromMode(this.states.heatingMode);
+        this.service.updateCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState, state);
       }
 
       if (topic.toLowerCase() === 'thermostat/boost/active') {
@@ -121,10 +134,48 @@ export class ThermostatAccessory {
       return this.getHeatingState(this.states.heatingActive);
     }
 
+    async setTargetHeatingState(value: CharacteristicValue) {
+      const allowedState = this.getAllowedTargetHeatingState(value);
+
+      if (allowedState !== value) {
+        this.service.updateCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState, allowedState);
+      }
+
+      this.states.heatingMode = this.getHeatingModeFromTargetState(allowedState);
+      this.log.info(`setHeatingMode: ${this.states.heatingMode}`);
+
+      this.mqttClient.publish('thermostat/heating/mode/set', this.states.heatingMode.toString());
+    }
+
+    async getTargetHeatingState(): Promise<CharacteristicValue> {
+      this.log.info(`getTargetHeatingState: ${this.states.heatingMode}`);
+      const state = this.getTargetHeatingStateFromMode(this.states.heatingMode);
+      return state;
+    }
+
     getHeatingState(heatingActive: boolean): CharacteristicValue {
       return heatingActive
         ? this.platform.Characteristic.CurrentHeatingCoolingState.HEAT
         : this.platform.Characteristic.CurrentHeatingCoolingState.OFF;
+    }
+
+    getTargetHeatingStateFromMode(mode: number) {
+      return mode === 2
+        ? this.platform.Characteristic.TargetHeatingCoolingState.OFF
+        : this.platform.Characteristic.TargetHeatingCoolingState.AUTO;
+    }
+
+    getAllowedTargetHeatingState(value: CharacteristicValue): CharacteristicValue {
+      // Limit the available modes because COOL and HEAT is not supported
+      return value === this.platform.Characteristic.TargetHeatingCoolingState.OFF
+        ? this.platform.Characteristic.TargetHeatingCoolingState.OFF
+        : this.platform.Characteristic.TargetHeatingCoolingState.AUTO;
+    }
+
+    getHeatingModeFromTargetState(value: CharacteristicValue): number {
+      return value === this.platform.Characteristic.TargetHeatingCoolingState.OFF
+        ? 2
+        : 0;
     }
 
     async getBoostSwitchOn(): Promise<CharacteristicValue> {
