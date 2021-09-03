@@ -59,8 +59,8 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
       {
         exampleUniqueId: 'SmartHomeThermostat',
         exampleDisplayName: 'Thermostat',
-        deviceType: 'thermostat'
-      }
+        deviceType: 'thermostat',
+      },
     ];
 
     // loop over the discovered devices and register each one if it has not already been registered

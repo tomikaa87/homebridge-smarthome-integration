@@ -72,6 +72,7 @@ export class ThermostatAccessory {
       this.mqttClient.subscribe('thermostat/temp/active', undefined);
       this.mqttClient.subscribe('thermostat/heating/active', undefined);
       this.mqttClient.subscribe('thermostat/heating/mode', undefined);
+      this.mqttClient.subscribe('thermostat/boost/active', undefined);
     }
 
     handleIncomingMqttMessage(topic: string, payload: Buffer): void {
