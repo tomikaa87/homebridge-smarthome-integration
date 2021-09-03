@@ -1,16 +1,16 @@
 {
   "private": true,
-  "displayName": "Plugin Name",
-  "name": "homebridge-plugin-name",
-  "version": "1.0.0",
-  "description": "A short description about what your plugin does.",
+  "displayName": "Smart Home Hntegration",
+  "name": "homebridge-smarthome-integration",
+  "version": "0.0.0",
+  "description": "Homebridge integration for various smart home devices",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git://github.com/USERNAME/GITHUB_PROJECT_NAME.git"
+    "url": "https://github.com/tomikaa87/homebridge-smarthome-integration.git"
   },
   "bugs": {
-    "url": "https://github.com/USERNAME/GITHUB_PROJECT_NAME/issues"
+    "url": "https://github.com/tomikaa87/homebridge-smarthome-integration/issues"
   },
   "engines": {
     "node": ">=12.13.0",
@@ -24,9 +24,12 @@
     "prepublishOnly": "npm run lint && npm run build"
   },
   "keywords": [
-    "homebridge-plugin"
+    "homebridge-plugin",
+    "esp-thermostat"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "mqtt": "^4.2.8"
+  },
   "devDependencies": {
     "@types/node": "^14.14.31",
     "@typescript-eslint/eslint-plugin": "^4.16.1",

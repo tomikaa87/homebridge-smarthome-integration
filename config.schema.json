@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "HomebridgeSmarthomeIntegration",
   "pluginType": "platform",
   "singular": true,
   "schema": {
@@ -8,8 +8,14 @@
       "name": {
         "title": "Name",
         "type": "string",
+        "required": false,
+        "default": "Smart Home Integration Platform"
+      },
+      "mqttBrokerUrl": {
+        "title": "MQTT Broker URL",
+        "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"
+        "default": "mqtt://localhost"
       }
     }
   }

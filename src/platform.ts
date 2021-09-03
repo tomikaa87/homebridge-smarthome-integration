@@ -1,14 +1,15 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { ExamplePlatformAccessory } from './platformAccessory';
+
+import { ThermostatAccessory } from './thermostatAccessory';
 
 /**
  * HomebridgePlatform
  * This class is the main constructor for your plugin, this is where you should
  * parse the user config and discover/register accessories with Homebridge.
  */
-export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
+export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
 
@@ -54,19 +55,16 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
     // EXAMPLE ONLY
     // A real plugin you would discover accessories from the local network, cloud services
     // or a user-defined array in the platform config.
-    const exampleDevices = [
+    const devices = [
       {
-        exampleUniqueId: 'ABCD',
-        exampleDisplayName: 'Bedroom',
-      },
-      {
-        exampleUniqueId: 'EFGH',
-        exampleDisplayName: 'Kitchen',
-      },
+        exampleUniqueId: 'SmartHomeThermostat',
+        exampleDisplayName: 'Thermostat',
+        deviceType: 'thermostat'
+      }
     ];
 
     // loop over the discovered devices and register each one if it has not already been registered
-    for (const device of exampleDevices) {
+    for (const device of devices) {
 
       // generate a unique id for the accessory this should be generated from
       // something globally unique, but constant, for example, the device serial
@@ -86,8 +84,9 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
         // this.api.updatePlatformAccessories([existingAccessory]);
 
         // create the accessory handler for the restored accessory
-        // this is imported from `platformAccessory.ts`
-        new ExamplePlatformAccessory(this, existingAccessory);
+        if (device.deviceType === 'thermostat') {
+          new ThermostatAccessory(this, existingAccessory, this.config);
+        }
 
         // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
         // remove platform accessories when no longer present
@@ -105,8 +104,9 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
         accessory.context.device = device;
 
         // create the accessory handler for the newly create accessory
-        // this is imported from `platformAccessory.ts`
-        new ExamplePlatformAccessory(this, accessory);
+        if (device.deviceType === 'thermostat') {
+          new ThermostatAccessory(this, accessory, this.config);
+        }
 
         // link the accessory to your platform
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
