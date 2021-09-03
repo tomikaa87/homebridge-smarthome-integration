@@ -43,7 +43,7 @@ export class ThermostatAccessory {
     }
 
     setupThermostatService(): void {
-      this.service.setCharacteristic(this.platform.Characteristic.Name, 'Thermostat');
+      this.service.setCharacteristic(this.platform.Characteristic.Name, this.accessory.displayName);
 
       this.service.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
         .onGet(this.getCurrentTemperature.bind(this));
@@ -68,11 +68,11 @@ export class ThermostatAccessory {
 
     subscribeToMqttTopics(): void {
       this.log.info('subscribeToMqttTopics');
-      this.mqttClient.subscribe('thermostat/temp/current', undefined);
-      this.mqttClient.subscribe('thermostat/temp/active', undefined);
-      this.mqttClient.subscribe('thermostat/heating/active', undefined);
-      this.mqttClient.subscribe('thermostat/heating/mode', undefined);
-      this.mqttClient.subscribe('thermostat/boost/active', undefined);
+      this.mqttClient.subscribe('thermostat/temp/current');
+      this.mqttClient.subscribe('thermostat/temp/active');
+      this.mqttClient.subscribe('thermostat/heating/active');
+      this.mqttClient.subscribe('thermostat/heating/mode');
+      this.mqttClient.subscribe('thermostat/boost/active');
     }
 
     handleIncomingMqttMessage(topic: string, payload: Buffer): void {
