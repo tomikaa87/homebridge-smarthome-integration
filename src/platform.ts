@@ -4,6 +4,7 @@ import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 
 import { ThermostatAccessory } from './thermostatAccessory';
 import { BedroomTempSensorAccessory } from './bedroomTempSensorAccessory';
+import { IrrigationSystemAccessory } from './irrigationSystemAccessory';
 
 /**
  * HomebridgePlatform
@@ -67,6 +68,11 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
         displayName: 'Bedroom temperature',
         deviceType: 'bedroom-temp',
       },
+      {
+        uniqueId: 'IrrigationSystem-1',
+        displayName: 'Irrigation',
+        deviceType: 'irrigation-system',
+      },
     ];
 
     // loop over the discovered devices and register each one if it has not already been registered
@@ -94,6 +100,8 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
           new ThermostatAccessory(this, existingAccessory, this.config);
         } else if (device.deviceType === 'bedroom-temp') {
           new BedroomTempSensorAccessory(this, existingAccessory, this.config);
+        } else if (device.deviceType === 'irrigation-system') {
+          new IrrigationSystemAccessory(this, existingAccessory, this.config);
         }
 
         // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
@@ -116,6 +124,8 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
           new ThermostatAccessory(this, accessory, this.config);
         } else if (device.deviceType === 'bedroom-temp') {
           new BedroomTempSensorAccessory(this, accessory, this.config);
+        } else if (device.deviceType === 'irrigation-system') {
+          new IrrigationSystemAccessory(this, accessory, this.config);
         }
 
         // link the accessory to your platform
