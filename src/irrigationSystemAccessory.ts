@@ -55,6 +55,10 @@ class ZoneControls {
       })
       .onSet(async (value: CharacteristicValue) => {
         this.log.info('setActive:', value as string);
+
+        const running = value as number;
+
+        this.mqttClient.publish(`irrigctl/zone/${this.index}/active/set`, running.toString());
       });
 
     this.valveService.getCharacteristic(this.platform.Characteristic.ValveType)
