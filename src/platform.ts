@@ -65,7 +65,7 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
       },
       {
         uniqueId: 'SmartHomeBedroomTempSensor-1',
-        displayName: 'Bedroom temperature',
+        displayName: 'Bedroom',
         deviceType: 'bedroom-temp',
       },
       {
