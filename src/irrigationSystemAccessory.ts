@@ -1,4 +1,4 @@
-import { Service, PlatformAccessory, CharacteristicValue, Logger, PlatformConfig } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue, PlatformConfig } from 'homebridge';
 
 import { SmartHomeIntegrationPlatform } from './platform';
 
