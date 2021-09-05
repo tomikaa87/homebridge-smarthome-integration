@@ -24,6 +24,7 @@ class ZoneControls {
     private readonly parentLogger: CategoryLogger,
     private readonly mqttClient: mqtt.Client,
     private readonly index: number,
+    private readonly configuredName: string = '',
   ) {
     this.name = `Zone ${this.index}`;
 
@@ -51,7 +52,12 @@ class ZoneControls {
     );
 
     this.valveService.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName);
-    this.valveService.setCharacteristic(this.platform.Characteristic.ConfiguredName, this.name);
+    this.valveService.setCharacteristic(
+      this.platform.Characteristic.ConfiguredName,
+      this.configuredName !== ''
+        ? this.configuredName
+        : this.name,
+    );
 
     this.valveService.getCharacteristic(this.platform.Characteristic.Active)
       .onGet(async () => {
@@ -128,12 +134,12 @@ export class IrrigationSystemAccessory {
     this.setupIrrigationSystemService();
 
     this.zoneControls = [
-      new ZoneControls(this.platform, this.accessory, this.log, this.mqttClient, 1),
-      new ZoneControls(this.platform, this.accessory, this.log, this.mqttClient, 2),
-      new ZoneControls(this.platform, this.accessory, this.log, this.mqttClient, 3),
-      new ZoneControls(this.platform, this.accessory, this.log, this.mqttClient, 4),
-      new ZoneControls(this.platform, this.accessory, this.log, this.mqttClient, 5),
-      new ZoneControls(this.platform, this.accessory, this.log, this.mqttClient, 6),
+      this.createZoneControls(1),
+      this.createZoneControls(2),
+      this.createZoneControls(3),
+      this.createZoneControls(4),
+      this.createZoneControls(5),
+      this.createZoneControls(6),
     ];
   }
 
@@ -181,5 +187,22 @@ export class IrrigationSystemAccessory {
       this.platform.Characteristic.Active,
       toActiveValue(this.inUse, this.platform),
     );
+  }
+
+  createZoneControls(zone: number): ZoneControls {
+    let configuredName = '';
+
+    if (this.config.zones !== undefined) {
+      this.log.info('config.zones:', this.config.zones);
+
+      this.config.zones.forEach(z => {
+        if (z.number === zone) {
+          configuredName = z.configuredName;
+          this.log.info(`using configured name for zone ${zone}: ${configuredName}`);
+        }
+      });
+    }
+
+    return new ZoneControls(this.platform, this.accessory, this.log, this.mqttClient, zone, configuredName);
   }
 }

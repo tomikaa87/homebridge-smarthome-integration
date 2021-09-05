@@ -16,6 +16,25 @@
         "type": "string",
         "required": true,
         "default": "mqtt://localhost"
+      },
+      "zones": {
+        "title": "Zones",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "number": {
+              "title": "Number",
+              "type": "number",
+              "required": true,
+              "default": 1
+            },
+            "configuredName": {
+              "title": "Configured name",
+              "type": "string"
+            }
+          }
+        }
       }
     }
   }
