@@ -6,11 +6,17 @@ import { CategoryLogger } from './CategoryLogger';
 
 import * as mqtt from 'mqtt';
 
+import { toActiveValue, toInUseValue } from './Utils';
+
 class ZoneControls {
   private readonly valveService: Service;
   private readonly log: CategoryLogger;
   private readonly name: string;
   private inUse = false;
+  private active = false;
+
+  private readonly activeStateTopic: string;
+  private readonly inUseStateTopic: string;
 
   constructor(
     private readonly platform: SmartHomeIntegrationPlatform,
@@ -25,7 +31,12 @@ class ZoneControls {
 
     this.log = new CategoryLogger(this.platform.log, `ZoneControl(${this.name})`, this.parentLogger);
 
+    this.activeStateTopic = `irrigctl/zone/${this.index}/active`;
+    this.inUseStateTopic = `irrigctl/zone/${this.index}/inUse`;
+
     this.log.info(`setting up: name=${this.name}, subType=${subType}`);
+    this.log.info('activeStateTopic:', this.activeStateTopic);
+    this.log.info('inUseStateTopic:', this.inUseStateTopic);
 
     this.mqttClient.on('connect', this.subscribeToMqttTopics.bind(this));
     this.mqttClient.on('message', this.handleIncomintMqttMessage.bind(this));
@@ -38,10 +49,6 @@ class ZoneControls {
       this.platform.Characteristic.ValveType,
       this.platform.Characteristic.ValveType.IRRIGATION,
     );
-    this.valveService.setCharacteristic(
-      this.platform.Characteristic.InUse,
-      this.platform.Characteristic.InUse.NOT_IN_USE,
-    );
 
     this.valveService.addOptionalCharacteristic(this.platform.Characteristic.ConfiguredName);
     this.valveService.setCharacteristic(this.platform.Characteristic.ConfiguredName, this.name);
@@ -49,16 +56,20 @@ class ZoneControls {
     this.valveService.getCharacteristic(this.platform.Characteristic.Active)
       .onGet(async () => {
         this.log.info('getActive');
-        return this.inUse
-          ? this.platform.Characteristic.Active.ACTIVE
-          : this.platform.Characteristic.Active.INACTIVE;
+        return toActiveValue(this.active, this.platform);
       })
       .onSet(async (value: CharacteristicValue) => {
         this.log.info('setActive:', value as string);
 
-        const running = value as number;
+        this.active = value as boolean;
 
-        this.mqttClient.publish(`irrigctl/zone/${this.index}/active/set`, running.toString());
+        this.mqttClient.publish(this.activeStateTopic + '/set', this.active ? '1' : '0');
+      });
+
+    this.valveService.getCharacteristic(this.platform.Characteristic.InUse)
+      .onGet(async () => {
+        this.log.info('getInUse');
+        return toInUseValue(this.inUse, this.platform);
       });
 
     this.valveService.getCharacteristic(this.platform.Characteristic.ValveType)
@@ -70,23 +81,23 @@ class ZoneControls {
 
   subscribeToMqttTopics(): void {
     this.log.info('subscribing to MQTT topics');
-    this.mqttClient.subscribe(`irrigctl/zone/${this.index}/active`);
+    this.mqttClient.subscribe(this.activeStateTopic);
+    this.mqttClient.subscribe(this.inUseStateTopic);
   }
 
   handleIncomintMqttMessage(topic: string, payload: Buffer): void {
-    if (topic.toLowerCase() === `irrigctl/zone/${this.index}/active`) {
-      this.log.info(`MQTT message arrived: topic=${topic}, payload=${payload.toString()}`);
-
+    if (topic.toLowerCase() === this.activeStateTopic.toLocaleLowerCase()) {
+      this.active = Number.parseInt(payload.toString()) === 1;
+      this.log.info(`this.active updated: ${this.active}`);
+    } else if (topic.toLowerCase() === this.inUseStateTopic.toLocaleLowerCase()) {
       this.inUse = Number.parseInt(payload.toString()) === 1;
-
-      this.valveService.updateCharacteristic(this.platform.Characteristic.InUse, this.inUse);
-      this.valveService.updateCharacteristic(
-        this.platform.Characteristic.Active,
-        this.inUse
-          ? this.platform.Characteristic.InUse.IN_USE
-          : this.platform.Characteristic.Active.INACTIVE,
-      );
+      this.log.info(`this.inUse updated: ${this.inUse}`);
     }
+
+    this.log.info(`this.active=${this.active}, this.inUse=${this.inUse}`);
+
+    this.valveService.updateCharacteristic(this.platform.Characteristic.Active, toActiveValue(this.active, this.platform));
+    this.valveService.updateCharacteristic(this.platform.Characteristic.InUse, toInUseValue(this.inUse, this.platform));
   }
 }
 
@@ -132,16 +143,12 @@ export class IrrigationSystemAccessory {
 
     this.service.getCharacteristic(this.platform.Characteristic.InUse)
       .onGet(async () => {
-        return this.inUse
-          ? this.platform.Characteristic.InUse.IN_USE
-          : this.platform.Characteristic.InUse.NOT_IN_USE;
+        return toInUseValue(this.inUse, this.platform);
       });
 
     this.service.getCharacteristic(this.platform.Characteristic.Active)
       .onGet(async () => {
-        return this.active
-          ? this.platform.Characteristic.Active.ACTIVE
-          : this.platform.Characteristic.Active.INACTIVE;
+        return toActiveValue(this.active, this.platform);
       });
   }
 
@@ -151,32 +158,28 @@ export class IrrigationSystemAccessory {
   }
 
   handleIncomintMqttMessage(topic: string, payload: Buffer): void {
-    if (topic.toLowerCase() === 'irrigctl/pump/1/active') {
-      this.log.info(`MQTT message arrived: topic=${topic}, payload=${payload.toString()}`);
+    this.log.info(`MQTT message arrived: topic=${topic}, payload=${payload.toString()}`);
 
+    if (topic.toLowerCase() === 'irrigctl/pump/1/active') {
       this.inUse = Number.parseInt(payload.toString()) === 1;
       this.active = this.inUse;
-
-      this.updateInUseCharacteristic();
-      this.updateActiceCharacteristic();
     }
+
+    this.updateInUseCharacteristic();
+    this.updateActiceCharacteristic();
   }
 
   updateInUseCharacteristic(): void {
     this.service.updateCharacteristic(
       this.platform.Characteristic.InUse,
-      this.inUse
-        ? this.platform.Characteristic.InUse.IN_USE
-        : this.platform.Characteristic.InUse.NOT_IN_USE,
+      toInUseValue(this.inUse, this.platform),
     );
   }
 
   updateActiceCharacteristic(): void {
     this.service.updateCharacteristic(
       this.platform.Characteristic.Active,
-      this.active
-        ? this.platform.Characteristic.Active.ACTIVE
-        : this.platform.Characteristic.Active.INACTIVE,
+      toActiveValue(this.inUse, this.platform),
     );
   }
 }
