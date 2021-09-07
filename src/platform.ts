@@ -5,6 +5,8 @@ import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { ThermostatAccessory } from './thermostatAccessory';
 import { BedroomTempSensorAccessory } from './bedroomTempSensorAccessory';
 import { IrrigationSystemAccessory } from './irrigationSystemAccessory';
+import { GreeAirConditionerAccessory } from './greeAirConditionerAccessory';
+import { BedroomShutterControllerAccessory } from './bedroomShutterControllerAccessory';
 
 /**
  * HomebridgePlatform
@@ -73,6 +75,16 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
         displayName: 'Irrigation',
         deviceType: 'irrigation-system',
       },
+      {
+        uniqueId: 'GreeAirConditioner-2',
+        displayName: 'Kitchen',
+        deviceType: 'gree-ac',
+      },
+      {
+        uniqueId: 'BedroomShutterController-1',
+        displayName: 'Bedroom shutter controller',
+        deviceType: 'smc',
+      },
     ];
 
     // loop over the discovered devices and register each one if it has not already been registered
@@ -102,6 +114,10 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
           new BedroomTempSensorAccessory(this, existingAccessory, this.config);
         } else if (device.deviceType === 'irrigation-system') {
           new IrrigationSystemAccessory(this, existingAccessory, this.config);
+        } else if (device.deviceType === 'gree-ac') {
+          new GreeAirConditionerAccessory(this, existingAccessory, this.config, device.displayName);
+        } else if (device.deviceType === 'smc') {
+          new BedroomShutterControllerAccessory(this, existingAccessory, this.config);
         }
 
         // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
@@ -126,6 +142,10 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
           new BedroomTempSensorAccessory(this, accessory, this.config);
         } else if (device.deviceType === 'irrigation-system') {
           new IrrigationSystemAccessory(this, accessory, this.config);
+        } else if (device.deviceType === 'gree-ac') {
+          new GreeAirConditionerAccessory(this, accessory, this.config, device.displayName);
+        } else if (device.deviceType === 'smc') {
+          new BedroomShutterControllerAccessory(this, accessory, this.config);
         }
 
         // link the accessory to your platform
