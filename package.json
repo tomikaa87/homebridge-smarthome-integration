@@ -1,13 +1,12 @@
 {
-  "private": true,
   "displayName": "Smart Home Integration",
-  "name": "homebridge-smarthome-integration",
+  "name": "@tomikaa87/homebridge-smarthome-integration",
   "version": "0.2.0",
   "description": "Homebridge integration for various smart home devices",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tomikaa87/homebridge-smarthome-integration.git"
+    "url": "git+https://github.com/tomikaa87/homebridge-smarthome-integration.git"
   },
   "bugs": {
     "url": "https://github.com/tomikaa87/homebridge-smarthome-integration/issues"
@@ -40,5 +39,7 @@
     "rimraf": "^3.0.2",
     "ts-node": "^9.1.1",
     "typescript": "^4.2.2"
-  }
+  },
+  "homepage": "https://github.com/tomikaa87/homebridge-smarthome-integration#readme",
+  "author": "tomikaa87"
 }

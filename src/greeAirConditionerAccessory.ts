@@ -66,7 +66,10 @@ export class GreeAirConditionerAccessory {
     this.fanService.setCharacteristic(this.platform.Characteristic.Name, 'AC Internal Fan');
 
     this.fanService.addOptionalCharacteristic(this.platform.Characteristic.CurrentFanState);
-    this.fanService.setCharacteristic(this.platform.Characteristic.CurrentFanState, this.platform.Characteristic.CurrentFanState.BLOWING_AIR);
+    this.fanService.setCharacteristic(
+      this.platform.Characteristic.CurrentFanState,
+      this.platform.Characteristic.CurrentFanState.BLOWING_AIR,
+    );
 
     this.fanService.addOptionalCharacteristic(this.platform.Characteristic.RotationSpeed);
     this.fanService.setCharacteristic(this.platform.Characteristic.RotationSpeed, 50);
@@ -113,7 +116,10 @@ export class GreeAirConditionerAccessory {
 
     // this.service.addLinkedService(this.slatsService);
 
-    // this.slatsService.setCharacteristic(this.platform.Characteristic.CurrentSlatState, this.platform.Characteristic.CurrentSlatState.SWINGING);
+    // this.slatsService.setCharacteristic(
+    //   this.platform.Characteristic.CurrentSlatState,
+    //   this.platform.Characteristic.CurrentSlatState.SWINGING
+    // );
 
     // this.slatsService.setCharacteristic(this.platform.Characteristic.SlatType, this.platform.Characteristic.SlatType.VERTICAL);
 
