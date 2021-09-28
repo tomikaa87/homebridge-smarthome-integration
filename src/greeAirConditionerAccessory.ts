@@ -1,6 +1,7 @@
 import { Service, PlatformAccessory, CharacteristicValue, PlatformConfig } from 'homebridge';
 import { CategoryLogger } from './CategoryLogger';
 import { SmartHomeIntegrationPlatform } from './platform';
+import * as Device from '@internal/gree/device.js';
 
 export class GreeAirConditionerAccessory {
   private readonly log: CategoryLogger;
@@ -8,6 +9,7 @@ export class GreeAirConditionerAccessory {
   // private readonly turboSwitchService: Service;
   private readonly fanService: Service;
   private readonly slatsService: Service;
+  private readonly device: Device.Device;
 
   private states = {
     rotationSpeed: 0,
@@ -135,6 +137,10 @@ export class GreeAirConditionerAccessory {
     // this.slatsService.addOptionalCharacteristic(this.platform.Characteristic.TargetTiltAngle);
     // this.slatsService.setCharacteristic(this.platform.Characteristic.TargetTiltAngle, 45);
 
+    this.device = new Device.Device('192.168.30.4');
+    this.device.on('params', (params) => {
+      this.log.info(`params=${JSON.stringify(params)}`);
+    });
   }
 
   setupRotationSpeedControl() {

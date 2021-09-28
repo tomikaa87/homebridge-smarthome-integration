@@ -77,7 +77,7 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
       },
       {
         uniqueId: 'GreeAirConditioner-2',
-        displayName: 'Kitchen',
+        displayName: 'Kitchen AC',
         deviceType: 'gree-ac',
       },
       {

@@ -27,6 +27,7 @@
     "esp-thermostat"
   ],
   "dependencies": {
+    "@internal/gree": "file:src/gree",
     "mqtt": "^4.2.8"
   },
   "devDependencies": {
