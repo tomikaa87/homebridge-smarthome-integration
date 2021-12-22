@@ -49,12 +49,54 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
     this.accessories.push(accessory);
   }
 
+  private setupAccessory(uniqueId: string, displayName: string, constructFunc: (accessory: PlatformAccessory) => void) {
+    const uuid = this.api.hap.uuid.generate(uniqueId);
+
+    this.log.info(`Setting up accessory: uniqueId=${uniqueId}, displayName=${displayName}, uuid=${uuid}`);
+
+    let accessory = this.accessories.find(accessory => accessory.UUID === uuid);
+
+    if (accessory) {
+      this.log.info(`Restoring existing accessory from cache: ${accessory.displayName}`);
+    } else {
+      this.log.info(`Creating new accessory: ${displayName}`);
+      accessory = new this.api.platformAccessory(displayName, uuid);
+      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+    }
+
+    accessory.context.device = {
+      uniqueId: uniqueId,
+      displayName: displayName,
+    };
+
+    // TODO is this necessary? just return the accessory to the constructor
+    constructFunc(accessory);
+  }
+
   /**
    * This is an example method showing how to register discovered accessories.
    * Accessories must only be registered once, previously created accessories
    * must not be registered again to prevent "duplicate UUID" errors.
    */
   discoverDevices() {
+    // Create Gree devices based on the config
+    if (this.config.greeDevices !== undefined) {
+      this.log.info(`Trying to load Gree devices from config: ${JSON.stringify(this.config.greeDevices)}`);
+
+      this.config.greeDevices.forEach(gd => {
+        if (gd.name !== undefined && gd.address !== undefined) {
+          const uniqueId = `GreeDevice-${gd.address}`;
+
+          this.log.info(`Creating Gree device: name=${gd.name}, address=${gd.address}, uniqueId=${uniqueId}`);
+
+          this.setupAccessory(uniqueId, gd.name, (accessory: PlatformAccessory) => {
+            new GreeAirConditionerAccessory(this, accessory, gd.address);
+          });
+        } else {
+          this.log.warn(`Invalid Gree device entry found: ${JSON.stringify(gd)}`);
+        }
+      });
+    }
 
     // EXAMPLE ONLY
     // A real plugin you would discover accessories from the local network, cloud services
@@ -75,11 +117,11 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
         displayName: 'Irrigation',
         deviceType: 'irrigation-system',
       },
-      {
-        uniqueId: 'GreeAirConditioner-2',
-        displayName: 'Kitchen AC',
-        deviceType: 'gree-ac',
-      },
+      // {
+      //   uniqueId: 'GreeAirConditioner-2',
+      //   displayName: 'Kitchen AC',
+      //   deviceType: 'gree-ac',
+      // },
       {
         uniqueId: 'BedroomShutterController-1',
         displayName: 'Bedroom shutter controller',
@@ -89,7 +131,6 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
 
     // loop over the discovered devices and register each one if it has not already been registered
     for (const device of devices) {
-
       // generate a unique id for the accessory this should be generated from
       // something globally unique, but constant, for example, the device serial
       // number or MAC address
@@ -114,8 +155,8 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
           new BedroomTempSensorAccessory(this, existingAccessory, this.config);
         } else if (device.deviceType === 'irrigation-system') {
           new IrrigationSystemAccessory(this, existingAccessory, this.config);
-        } else if (device.deviceType === 'gree-ac') {
-          new GreeAirConditionerAccessory(this, existingAccessory, this.config, device.displayName);
+        // } else if (device.deviceType === 'gree-ac') {
+        //   new GreeAirConditionerAccessory(this, existingAccessory, this.config, device.displayName);
         } else if (device.deviceType === 'smc') {
           new BedroomShutterControllerAccessory(this, existingAccessory, this.config);
         }
@@ -142,8 +183,8 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
           new BedroomTempSensorAccessory(this, accessory, this.config);
         } else if (device.deviceType === 'irrigation-system') {
           new IrrigationSystemAccessory(this, accessory, this.config);
-        } else if (device.deviceType === 'gree-ac') {
-          new GreeAirConditionerAccessory(this, accessory, this.config, device.displayName);
+        // } else if (device.deviceType === 'gree-ac') {
+        //   new GreeAirConditionerAccessory(this, accessory, this.config, device.displayName);
         } else if (device.deviceType === 'smc') {
           new BedroomShutterControllerAccessory(this, accessory, this.config);
         }

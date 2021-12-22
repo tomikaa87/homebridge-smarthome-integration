@@ -16,6 +16,62 @@ const states = {
   WAIT_NEXT_DEVICE_STATUS: 9,
 };
 
+const parameters = {
+  POWER_ON: {
+    name: 'power_on',
+    device_param: 'Pow',
+  },
+  LED_ON: {
+    name: 'led_on',
+    device_param: 'Lig',
+  },
+  TURBO_ON: {
+    name: 'turbo_on',
+    device_param: 'Tur',
+  },
+  XFAN_ON: {
+    name: 'xfan_on',
+    device_param: 'Blo',
+  },
+  QUIET_ON: {
+    name: 'quiet_on',
+    device_param: 'Quiet',
+  },
+  SLEEP_ON: {
+    name: 'sleep_on',
+    device_param: 'SwhSlp',
+  },
+  TARGET_TEMP: {
+    name: 'target_temp',
+    device_param: 'SetTem',
+  },
+  SENSOR_TEMP: {
+    name: 'sensor_temp',
+    device_param: 'TemSen',
+  },
+  FAN_SPEED: {
+    name: 'fan_speed',
+    device_param: 'WdSpd',
+  },
+  MODE: {
+    name: 'mode',
+    device_param: 'Mod',
+    modes: {
+      AUTO: 0,
+      COOL: 1,
+      DRY: 2,
+      FAN: 3,
+      HEAT: 4,
+    },
+  },
+  V_SWING: {
+    name: 'v_swing',
+    device_param: 'SwUpDn',
+  },
+};
+
+exports.DeviceParameters = parameters;
+
 function send_request(request, address, port) {
   return new Promise(resolve => {
     const socket = dgram.createSocket('udp4');
@@ -156,6 +212,20 @@ async function get_device_params(cid, key, address, port) {
   return result;
 }
 
+async function set_device_param(cid, key, param, value, address, port) {
+  if (cid === undefined) {
+    return false;
+  }
+
+  const request_pack = pack.pack_create_set_param(param, value);
+  const request = pack.pack_create_app_request(cid, pack.pack_encrypt(key, request_pack));
+  const result = await send_request(JSON.stringify(request), address, port);
+
+  const decrypted = pack.pack_decrypt(key, result.pack);
+
+  return decrypted.r === 200;
+}
+
 class Device extends events.Dispatcher {
     _state = states.IDLE;
 
@@ -164,6 +234,8 @@ class Device extends events.Dispatcher {
 
       this._address = address;
       this._port = port;
+
+      this._params = {};
 
       // console.log(`Device: created, address=${this._address}, port=${this._port}`);
 
@@ -177,6 +249,21 @@ class Device extends events.Dispatcher {
 
     get_params() {
       return this._params;
+    }
+
+    set_param(param, value) {
+      if (param.name === undefined || param.device_param === undefined || value === undefined) {
+        // console.warn('Device: invalid input parameters given to set_param()');
+        return;
+      }
+
+      // console.log(`Device: set_param, ${param.device_param}=${value}`);
+
+      set_device_param(this._cid, this._key, param.device_param, value, this._address, this._port).then((ok) => {
+        if (ok) {
+          this._params[param.name] = value;
+        }
+      });
     }
 
     task() {

@@ -15,6 +15,10 @@ export class CategoryLogger {
     }
   }
 
+  debug(message: string, ...args: unknown[]): void {
+    this.logger.debug(this.category, message, ...args);
+  }
+
   info(message: string, ...args: unknown[]): void {
     this.logger.info(this.category, message, ...args);
   }

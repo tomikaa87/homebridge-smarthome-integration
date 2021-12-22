@@ -84,3 +84,19 @@ exports.pack_create_app_request = function(cid, pack, uid = 0, i = 0) {
     uid: uid,
   };
 };
+
+exports.pack_create_set_param = function(param, value) {
+  return {
+    opt: [ param ],
+    p: [ value ],
+    t: 'cmd',
+  };
+};
+
+exports.pack_create_set_params = function(params, values) {
+  return {
+    opt: params,
+    p: values,
+    t: 'cmd',
+  };
+};

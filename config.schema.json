@@ -35,6 +35,27 @@
             }
           }
         }
+      },
+      "greeDevices": {
+        "title": "Gree devices",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "title": "Name",
+              "type": "string",
+              "required": true,
+              "default": "Air Conditioner"
+            },
+            "address": {
+              "title": "Network address",
+              "type": "string",
+              "required": true,
+              "default": "192.168.30.0"
+            }
+          }
+        }
       }
     }
   }
