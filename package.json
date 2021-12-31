@@ -1,7 +1,7 @@
 {
   "displayName": "Smart Home Integration",
   "name": "@tomikaa87/homebridge-smarthome-integration",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Homebridge integration for various smart home devices",
   "license": "Apache-2.0",
   "repository": {
@@ -19,7 +19,7 @@
   "scripts": {
     "lint": "eslint src/**.ts --max-warnings=0",
     "watch": "npm run build && npm link && nodemon",
-    "build": "rimraf ./dist && tsc",
+    "build": "rimraf ./dist && tsc && mkdir -p ./dist/gree && cp ./src/gree/*.js ./dist/gree/",
     "prepublishOnly": "npm run lint && npm run build"
   },
   "keywords": [

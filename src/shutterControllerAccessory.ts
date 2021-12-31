@@ -17,11 +17,13 @@ class ShutterControl {
     private readonly platform: SmartHomeIntegrationPlatform,
     private readonly accessory: PlatformAccessory,
     private readonly mqttClient: mqtt.Client,
-    private readonly mqttTopic: string,
+    private readonly mqttSubTopic: string,
   ) {
     this.serviceName = `ShutterControl-${name}`;
 
     this.log = new CategoryLogger(this.platform.log, this.serviceName);
+
+    this.log.info(`Creating: name=${this.name}, mqttSubTopic=${this.mqttSubTopic}`);
 
     this.position = 50;
 
@@ -46,7 +48,7 @@ class ShutterControl {
   }
 
   setPosition(pos: number): void {
-    const mqttSetTopic = `home/shutters/${this.mqttTopic}/state/set`;
+    const mqttSetTopic = `home/shutters/${this.mqttSubTopic}/state/set`;
 
     this.log.info(`setPosition: pos=${pos}, mqttSetTopic=${mqttSetTopic}`);
 
@@ -63,39 +65,22 @@ class ShutterControl {
 export class ShutterControllerAccessory {
   private readonly mqttClient: mqtt.Client;
   private readonly log: CategoryLogger;
-  private readonly bedroomDoor: ShutterControl;
-  private readonly bedroomWindow: ShutterControl;
-  private readonly livingRoomLeftDoor: ShutterControl;
-  private readonly livingRoomLeftWindow: ShutterControl;
-  private readonly livingRoomRightWindow: ShutterControl;
-  private readonly livingRoomRightDoor: ShutterControl;
-  private readonly kitchenDoor: ShutterControl;
-  private readonly kitchenLeftWindow: ShutterControl;
-  private readonly kitchenRightWindow: ShutterControl;
+  private readonly control: ShutterControl;
 
   constructor(
     private readonly platform: SmartHomeIntegrationPlatform,
     private readonly accessory: PlatformAccessory,
     private readonly config: PlatformConfig,
+    private readonly name: string,
+    private readonly mqttSubTopic: string,
   ) {
-    this.log = new CategoryLogger(this.platform.log, 'ShutterControllerAccessory');
+    this.log = new CategoryLogger(this.platform.log, `ShutterControllerAccessory-${this.name}`);
 
     this.mqttClient = mqtt.connect(this.config.mqttBrokerUrl);
     this.mqttClient.on('connect', () => {
       this.log.info('MQTT client connected');
     });
 
-    this.bedroomDoor = new ShutterControl('Bedroom Door', platform, accessory, this.mqttClient, 'bedroom/door');
-    this.bedroomWindow = new ShutterControl('Bedroom Window', platform, accessory, this.mqttClient, 'bedroom/window');
-
-    this.livingRoomLeftDoor = new ShutterControl('Living Room Left Door', platform, accessory, this.mqttClient, 'livingroom/leftdoor');
-    this.livingRoomLeftWindow =
-      new ShutterControl('Living Room Left Window', platform, accessory, this.mqttClient, 'livingroom/leftwindow');
-    this.livingRoomRightWindow =
-      new ShutterControl('Living Room Right Window', platform, accessory, this.mqttClient, 'livingroom/rightwindow');
-    this.livingRoomRightDoor = new ShutterControl('Living Room Right Door', platform, accessory, this.mqttClient, 'livingroom/rightdoor');
-    this.kitchenDoor = new ShutterControl('Kitchen Door', platform, accessory, this.mqttClient, 'kitchen/door');
-    this.kitchenLeftWindow = new ShutterControl('Kitchen Left Window', platform, accessory, this.mqttClient, 'kitchen/leftwindow');
-    this.kitchenRightWindow = new ShutterControl('Kitchen Right Window', platform, accessory, this.mqttClient, 'kitchen/rightwindow');
+    this.control = new ShutterControl(this.name, platform, accessory, this.mqttClient, this.mqttSubTopic);
   }
 }

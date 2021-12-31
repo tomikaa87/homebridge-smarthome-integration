@@ -56,6 +56,24 @@
             }
           }
         }
+      },
+      "shutterControllers": {
+        "title": "Shutters",
+        "type": "array",
+        "items": {
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "required": true,
+            "default": "Shutter"
+          },
+          "mqttSubTopic": {
+            "title": "MQTT sub-topic",
+            "type": "string",
+            "required": true,
+            "default": "room/shutter"
+          }
+        }
       }
     }
   }

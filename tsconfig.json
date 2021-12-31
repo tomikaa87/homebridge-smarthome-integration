@@ -18,7 +18,8 @@
     "noImplicitAny": false
   },
   "include": [
-    "src/"
+    "src/",
+    "src/gree/"
   ],
   "exclude": [
     "**/*.spec.ts"

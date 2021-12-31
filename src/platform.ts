@@ -96,6 +96,23 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
           this.log.warn(`Invalid Gree device entry found: ${JSON.stringify(gd)}`);
         }
       });
+
+      // Create Shutter Controller devices based on the config
+      if (this.config.shutterControllers !== undefined) {
+        this.log.info(`Trying to load Shutter Controller devices from config: ${JSON.stringify(this.config.shutterControllers)}`);
+
+        this.config.shutterControllers.forEach(controller => {
+          const uniqueId = `ShutterController-${controller.name}`;
+
+          if (controller.name !== undefined && controller.mqttSubTopic !== undefined) {
+            this.setupAccessory(uniqueId, controller.name, (accessory: PlatformAccessory) => {
+              new ShutterControllerAccessory(this, accessory, this.config, controller.name, controller.mqttSubTopic);
+            });
+          } else {
+            this.log.warn(`Invalid Shutter Controller device entry found: ${JSON.stringify(controller)}`);
+          }
+        });
+      }
     }
 
     // EXAMPLE ONLY
@@ -122,11 +139,11 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
       //   displayName: 'Kitchen AC',
       //   deviceType: 'gree-ac',
       // },
-      {
-        uniqueId: 'BedroomShutterController-1',
-        displayName: 'Bedroom shutter controller',
-        deviceType: 'smc',
-      },
+      // {
+      //   uniqueId: 'BedroomShutterController-1',
+      //   displayName: 'Bedroom shutter controller',
+      //   deviceType: 'smc',
+      // },
     ];
 
     // loop over the discovered devices and register each one if it has not already been registered
@@ -157,8 +174,8 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
           new IrrigationSystemAccessory(this, existingAccessory, this.config);
         // } else if (device.deviceType === 'gree-ac') {
         //   new GreeAirConditionerAccessory(this, existingAccessory, this.config, device.displayName);
-        } else if (device.deviceType === 'smc') {
-          new ShutterControllerAccessory(this, existingAccessory, this.config);
+        // } else if (device.deviceType === 'smc') {
+        //   new ShutterControllerAccessory(this, existingAccessory, this.config);
         }
 
         // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
@@ -185,8 +202,8 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
           new IrrigationSystemAccessory(this, accessory, this.config);
         // } else if (device.deviceType === 'gree-ac') {
         //   new GreeAirConditionerAccessory(this, accessory, this.config, device.displayName);
-        } else if (device.deviceType === 'smc') {
-          new ShutterControllerAccessory(this, accessory, this.config);
+        // } else if (device.deviceType === 'smc') {
+        //   new ShutterControllerAccessory(this, accessory, this.config);
         }
 
         // link the accessory to your platform
