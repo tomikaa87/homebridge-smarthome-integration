@@ -1,8 +1,7 @@
-import { Service, PlatformAccessory, CharacteristicValue, PlatformConfig } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { CategoryLogger } from './CategoryLogger';
 import { SmartHomeIntegrationPlatform } from './platform';
 import * as Device from '@internal/gree/device.js';
-import { openStdin } from 'process';
 
 export class GreeAirConditionerAccessory {
   private readonly log: CategoryLogger;

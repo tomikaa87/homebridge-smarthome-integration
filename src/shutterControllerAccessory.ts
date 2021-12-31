@@ -89,8 +89,10 @@ export class ShutterControllerAccessory {
     this.bedroomWindow = new ShutterControl('Bedroom Window', platform, accessory, this.mqttClient, 'bedroom/window');
 
     this.livingRoomLeftDoor = new ShutterControl('Living Room Left Door', platform, accessory, this.mqttClient, 'livingroom/leftdoor');
-    this.livingRoomLeftWindow = new ShutterControl('Living Room Left Window', platform, accessory, this.mqttClient, 'livingroom/leftwindow');
-    this.livingRoomRightWindow = new ShutterControl('Living Room Right Window', platform, accessory, this.mqttClient, 'livingroom/rightwindow');
+    this.livingRoomLeftWindow =
+      new ShutterControl('Living Room Left Window', platform, accessory, this.mqttClient, 'livingroom/leftwindow');
+    this.livingRoomRightWindow =
+      new ShutterControl('Living Room Right Window', platform, accessory, this.mqttClient, 'livingroom/rightwindow');
     this.livingRoomRightDoor = new ShutterControl('Living Room Right Door', platform, accessory, this.mqttClient, 'livingroom/rightdoor');
     this.kitchenDoor = new ShutterControl('Kitchen Door', platform, accessory, this.mqttClient, 'kitchen/door');
     this.kitchenLeftWindow = new ShutterControl('Kitchen Left Window', platform, accessory, this.mqttClient, 'kitchen/leftwindow');
