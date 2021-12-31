@@ -6,7 +6,7 @@ import { ThermostatAccessory } from './thermostatAccessory';
 import { BedroomTempSensorAccessory } from './bedroomTempSensorAccessory';
 import { IrrigationSystemAccessory } from './irrigationSystemAccessory';
 import { GreeAirConditionerAccessory } from './greeAirConditionerAccessory';
-import { BedroomShutterControllerAccessory } from './bedroomShutterControllerAccessory';
+import { ShutterControllerAccessory } from './shutterControllerAccessory';
 
 /**
  * HomebridgePlatform
@@ -158,7 +158,7 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
         // } else if (device.deviceType === 'gree-ac') {
         //   new GreeAirConditionerAccessory(this, existingAccessory, this.config, device.displayName);
         } else if (device.deviceType === 'smc') {
-          new BedroomShutterControllerAccessory(this, existingAccessory, this.config);
+          new ShutterControllerAccessory(this, existingAccessory, this.config);
         }
 
         // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
@@ -186,7 +186,7 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
         // } else if (device.deviceType === 'gree-ac') {
         //   new GreeAirConditionerAccessory(this, accessory, this.config, device.displayName);
         } else if (device.deviceType === 'smc') {
-          new BedroomShutterControllerAccessory(this, accessory, this.config);
+          new ShutterControllerAccessory(this, accessory, this.config);
         }
 
         // link the accessory to your platform
