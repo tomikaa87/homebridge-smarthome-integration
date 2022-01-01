@@ -7,6 +7,7 @@ import { BedroomTempSensorAccessory } from './bedroomTempSensorAccessory';
 import { IrrigationSystemAccessory } from './irrigationSystemAccessory';
 import { GreeAirConditionerAccessory } from './greeAirConditionerAccessory';
 import { ShutterControllerAccessory } from './shutterControllerAccessory';
+import { DoorbellAccessory } from './doorbellAccessory';
 
 /**
  * HomebridgePlatform
@@ -114,6 +115,11 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
         });
       }
     }
+
+    this.log.info('Creating Doorbell Accessory');
+    this.setupAccessory('doorbell1', 'Doorbell', (accessory: PlatformAccessory) => {
+      new DoorbellAccessory(this, accessory, this.config);
+    });
 
     // EXAMPLE ONLY
     // A real plugin you would discover accessories from the local network, cloud services
