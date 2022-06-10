@@ -85,6 +85,8 @@ export class GreeAirConditionerAccessory {
             heatingThreshold,
           );
         }
+
+        this.device.set_param(Device.DeviceParameters.TARGET_TEMP, this.temps.coolingThreshold);
       });
     this.service.addOptionalCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature);
     this.service.getCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature)
@@ -104,6 +106,8 @@ export class GreeAirConditionerAccessory {
             coolingThreshold,
           );
         }
+
+        this.device.set_param(Device.DeviceParameters.TARGET_TEMP, this.temps.heatingThreshold);
       });
 
     this.turboSwitchService = this.createSimpleFunctionSwitchService(
