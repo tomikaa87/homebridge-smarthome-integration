@@ -94,6 +94,6 @@ export class DoorbellAccessory {
       this.states.ringerMuted = value as boolean;
       this.log.info(`setMuteSwitchOn: ${this.states.ringerMuted}`);
 
-      this.mqttClient.publish('doorbell/muted', this.states.ringerMuted ? '1' : '0');
+      this.mqttClient.publish('doorphone/mute', this.states.ringerMuted ? '1' : '0');
     }
 }

@@ -1,4 +1,4 @@
-import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue, CharacteristicGetHandler, CharacteristicSetHandler } from 'homebridge';
 import { CategoryLogger } from './CategoryLogger';
 import { SmartHomeIntegrationPlatform } from './platform';
 import * as Device from './gree/device.js';
@@ -6,14 +6,18 @@ import * as Device from './gree/device.js';
 export class GreeAirConditionerAccessory {
   private readonly log: CategoryLogger;
   private readonly service: Service;
-  // private readonly turboSwitchService: Service;
-  private readonly fanService: Service;
-  // private readonly slatsService: Service;
+  private readonly turboSwitchService: Service;
+  private readonly xfanSwitchService: Service;
+  private readonly ledSwitchService: Service;
+  private readonly manualFanService: Service;
+  private readonly slatsService: Service;
   private readonly device: Device.Device;
 
   private states = {
-    rotationSpeed: 0,
-    slatsTiltAngle: 0,
+    manualFanSpeed: 0,
+    verticalSlatPosition: 0,
+    skipNextUpdate: false,
+    // verticalSlatTargetPosition: 0,
   };
 
   private temps = {
@@ -31,7 +35,7 @@ export class GreeAirConditionerAccessory {
       `${this.accessory.context.device.uniqueId}(${this.accessory.context.device.displayName})`,
     );
 
-    this.log.info('created');
+    this.log.info(`created: displayName=${this.accessory.displayName}`);
 
     // The base service
     this.service = this.accessory.getServiceById(this.platform.Service.HeaterCooler, this.accessory.displayName)
@@ -39,16 +43,20 @@ export class GreeAirConditionerAccessory {
 
     // Fan service
     const fanServiceName = `${this.accessory.context.device.uniqueId}-Fan`;
-    this.fanService = this.accessory.getServiceById(this.platform.Service.Fan, fanServiceName)
+    this.manualFanService = this.accessory.getServiceById(this.platform.Service.Fan, fanServiceName)
       || this.accessory.addService(this.platform.Service.Fan, 'Fan', fanServiceName);
     this.setupFanService();
 
+    // Slats service
+    const slatsServiceName = `${this.accessory.context.device.uniqueId}-Slats`;
+    this.slatsService = this.accessory.getServiceById(this.platform.Service.WindowCovering, slatsServiceName)
+      || this.accessory.addService(this.platform.Service.WindowCovering, slatsServiceName, slatsServiceName);
+    this.setupVerticalSlat();
+
     this.device = new Device.Device(this.address);
 
-    // this.setupDevice();
-    // this.setupBaseCharacteristics();
-
-    // this.setupRotationSpeedControl();
+    this.setupDevice();
+    this.setupBaseCharacteristics();
 
     // TEST
     this.service.getCharacteristic(this.platform.Characteristic.Active)
@@ -98,107 +106,49 @@ export class GreeAirConditionerAccessory {
         }
       });
 
+    this.turboSwitchService = this.createSimpleFunctionSwitchService(
+      'TurboSwitch',
+      'Turbo',
+      async () => {
+        return this.device.get_params()[Device.DeviceParameters.TURBO_ON.name] === true
+          ? 1
+          : 0;
+      },
+      async (value: CharacteristicValue) => {
+        this.log.info(`*** Turbo: ${value as number}`);
+        this.device.set_param(Device.DeviceParameters.TURBO_ON, value ? 1 : 0);
+      },
+    );
 
-    // TURBO switch
+    this.xfanSwitchService = this.createSimpleFunctionSwitchService(
+      'XfanSwitch',
+      'X-Fan',
+      async () => {
+        return this.device.get_params()[Device.DeviceParameters.XFAN_ON.name] === true
+          ? 1
+          : 0;
+      },
+      async (value: CharacteristicValue) => {
+        this.log.info(`*** X-Fan: ${value as number}`);
+        this.device.set_param(Device.DeviceParameters.XFAN_ON, value ? 1 : 0);
+      },
+    );
 
-    // const switchName = `${this.name}-TurboSwitch`;
+    this.ledSwitchService = this.createSimpleFunctionSwitchService(
+      'LedSwitch',
+      'LED',
+      async () => {
+        return this.device.get_params()[Device.DeviceParameters.LED_ON.name] === true
+          ? 1
+          : 0;
+      },
+      async (value: CharacteristicValue) => {
+        this.log.info(`*** LED: ${value as number}`);
+        this.device.set_param(Device.DeviceParameters.LED_ON, value ? 1 : 0);
+      },
+    );
 
-    // this.turboSwitchService = this.accessory.getServiceById(this.platform.Service.Switch, switchName)
-    //   || this.accessory.addService(this.platform.Service.Switch, switchName, switchName);
-
-    // this.turboSwitchService.addOptionalCharacteristic(this.platform.Characteristic.Name);
-    // this.turboSwitchService.setCharacteristic(this.platform.Characteristic.Name, 'Turbo');
-
-    // this.turboSwitchService.setCharacteristic(this.platform.Characteristic.On, true);
-
-    // FAN service
-
-
-
-
-
-
-
-    // SLATS service
-
-    // const slatsServiceName = `${this.name}-Slats`;
-
-    // this.slatsService = this.accessory.getServiceById(platform.Service.Slats, slatsServiceName)
-    //   || this.accessory.addService(platform.Service.Slats, slatsServiceName, slatsServiceName);
-
-    // this.slatsService.addOptionalCharacteristic(this.platform.Characteristic.Name);
-    // this.slatsService.setCharacteristic(this.platform.Characteristic.Name, 'AC Internal Slat');
-
-    // this.slatsService.getCharacteristic(this.platform.Characteristic.CurrentSlatState)
-    //   .onGet(async () => {
-    //     this.log.info('get: CurrentSlatState');
-    //     return this.platform.Characteristic.CurrentSlatState.SWINGING;
-    //   });
-
-    // this.slatsService.getCharacteristic(this.platform.Characteristic.SlatType)
-    //   .onGet(async () => {
-    //     this.log.info('get: SlatType');
-    //     return this.platform.Characteristic.SlatType.VERTICAL;
-    //   });
-
-    // this.slatsService.addOptionalCharacteristic(this.platform.Characteristic.CurrentTiltAngle);
-    // this.slatsService.getCharacteristic(this.platform.Characteristic.CurrentTiltAngle)
-    //   .onGet(async () => {
-    //     this.log.info('get: CurrentTiltAngle');
-    //     return 0;
-    //   });
-
-    // this.slatsService.addOptionalCharacteristic(this.platform.Characteristic.TargetTiltAngle);
-    // this.slatsService.getCharacteristic(this.platform.Characteristic.TargetTiltAngle)
-    //   .onGet(async () => {
-    //     this.log.info('get: TargetTiltAngle');
-    //     return this.states.slatsTiltAngle;
-    //   })
-    //   .onSet(async (value: CharacteristicValue) => {
-    //     this.states.slatsTiltAngle = value as number;
-    //     this.log.info(`set: TargetTiltAngle, value=${this.states.slatsTiltAngle}`);
-    //   });
-
-    // this.service.addLinkedService(this.slatsService);
-
-    // this.slatsService.setCharacteristic(
-    //   this.platform.Characteristic.CurrentSlatState,
-    //   this.platform.Characteristic.CurrentSlatState.SWINGING
-    // );
-
-    // this.slatsService.setCharacteristic(this.platform.Characteristic.SlatType, this.platform.Characteristic.SlatType.VERTICAL);
-
-    // this.slatsService.addOptionalCharacteristic(this.platform.Characteristic.Name);
-    // this.slatsService.setCharacteristic(this.platform.Characteristic.Name, 'Slats');
-
-    // this.slatsService.addOptionalCharacteristic(this.platform.Characteristic.SwingMode);
-    // this.slatsService.setCharacteristic(this.platform.Characteristic.SwingMode, this.platform.Characteristic.SwingMode.SWING_ENABLED);
-
-    // this.slatsService.addOptionalCharacteristic(this.platform.Characteristic.CurrentTiltAngle);
-    // this.slatsService.setCharacteristic(this.platform.Characteristic.CurrentTiltAngle, 45);
-
-    // this.slatsService.addOptionalCharacteristic(this.platform.Characteristic.TargetTiltAngle);
-    // this.slatsService.setCharacteristic(this.platform.Characteristic.TargetTiltAngle, 45);
-
-    // this.device = new Device.Device('192.168.30.4');
-    // this.device.on('params', (params) => {
-    //   this.log.info(`params=${JSON.stringify(params)}`);
-    // });
   }
-
-  // setupRotationSpeedControl() {
-  //   this.service.addOptionalCharacteristic(this.platform.Characteristic.RotationSpeed);
-
-  //   this.service.getCharacteristic(this.platform.Characteristic.RotationSpeed)
-  //     .onGet(async () => {
-  //       this.log.info('get: RotationSpeed');
-  //       return this.states.rotationSpeed;
-  //     })
-  //     .onSet(async (value: CharacteristicValue) => {
-  //       this.states.rotationSpeed = value as number;
-  //       this.log.info(`set: RotationSpeed, value=${this.states.rotationSpeed}`);
-  //     });
-  // }
 
   setupDevice() {
     this.log.info('setting up the device');
@@ -209,12 +159,13 @@ export class GreeAirConditionerAccessory {
   setupBaseCharacteristics() {
     this.log.info('setting up base characteristics');
 
-    this.service.setCharacteristic(this.platform.Characteristic.CurrentTemperature, 0);
+    this.service.setCharacteristic(this.platform.Characteristic.CurrentTemperature, 25);
 
     // TargetTemperature
-    this.service.setCharacteristic(this.platform.Characteristic.TargetTemperature, 0);
+    this.service.setCharacteristic(this.platform.Characteristic.TargetTemperature, 25);
     this.service.getCharacteristic(this.platform.Characteristic.TargetTemperature)
       .onSet(async (value: CharacteristicValue) => {
+        this.log.info(`*** Set target temperature of device: ${value as number}`);
         this.device.set_param(Device.DeviceParameters.TARGET_TEMP, value as number);
       });
 
@@ -238,29 +189,89 @@ export class GreeAirConditionerAccessory {
     this.service.setCharacteristic(this.platform.Characteristic.Active, false);
     this.service.getCharacteristic(this.platform.Characteristic.Active)
       .onSet(async (value: CharacteristicValue) => {
+        this.log.info(`*** Set power state of device: ${value as number}`);
         this.device.set_param(Device.DeviceParameters.POWER_ON, value as boolean);
       });
   }
 
   setupFanService() {
-    // this.service.addLinkedService(this.fanService);
+    this.manualFanService.addOptionalCharacteristic(this.platform.Characteristic.Name);
+    this.manualFanService.setCharacteristic(this.platform.Characteristic.Name, `${this.accessory.displayName} Manual Fan`);
 
-    this.fanService.setCharacteristic(this.platform.Characteristic.Active, false);
+    this.manualFanService.addOptionalCharacteristic(this.platform.Characteristic.RotationSpeed);
 
-    // this.fanService.addOptionalCharacteristic(this.platform.Characteristic.Name);
-    // this.fanService.setCharacteristic(this.platform.Characteristic.Name, 'AC Internal Fan');
+    this.manualFanService.getCharacteristic(this.platform.Characteristic.RotationSpeed)
+      .onSet(async (value: CharacteristicValue) => {
+        const speed = Math.round(value as number / 20);
 
-    this.fanService.addOptionalCharacteristic(this.platform.Characteristic.CurrentFanState);
-    this.fanService.setCharacteristic(
-      this.platform.Characteristic.CurrentFanState,
-      this.platform.Characteristic.CurrentFanState.INACTIVE,
-    );
+        this.log.info(`Set manual fan RotationSpeed: value=${value as number}, speed=${speed}`);
 
-    this.fanService.addOptionalCharacteristic(this.platform.Characteristic.RotationSpeed);
-    this.fanService.setCharacteristic(this.platform.Characteristic.RotationSpeed, 0);
+        this.device.set_param(Device.DeviceParameters.FAN_SPEED, speed);
+
+        if (speed === 0) {
+          this.log.info('Deactivating manual fan, RotationSpeed == 0');
+
+          this.manualFanService.updateCharacteristic(
+            this.platform.Characteristic.Active,
+            this.platform.Characteristic.Active.INACTIVE,
+          );
+        }
+
+        // Workaround to avoid overwriting the new value with the old one
+        this.states.skipNextUpdate = true;
+      });
+
+    this.manualFanService.getCharacteristic(this.platform.Characteristic.Active)
+      .onSet(async (value: CharacteristicValue) => {
+        this.log.info(`Set manual fan Active state: ${value as number}`);
+
+        if (value as boolean) {
+          this.log.info(`Restoring previous manual fan speed: ${this.states.manualFanSpeed}`);
+
+          this.device.set_param(Device.DeviceParameters.FAN_SPEED, this.states.manualFanSpeed);
+        } else {
+          this.log.info('Deactivating manual fan, Active == false');
+
+          this.device.set_param(Device.DeviceParameters.FAN_SPEED, 0);
+        }
+
+        // Workaround to avoid overwriting the new value with the old one
+        this.states.skipNextUpdate = true;
+      });
+  }
+
+  setupVerticalSlat(): void {
+    this.slatsService.addOptionalCharacteristic(this.platform.Characteristic.Name);
+    this.slatsService.setCharacteristic(this.platform.Characteristic.Name, `${this.accessory.displayName} Vertical Slat`);
+
+    this.slatsService.getCharacteristic(this.platform.Characteristic.TargetPosition)
+      .onGet(async () => {
+        return this.states.verticalSlatPosition;
+      })
+      .onSet(async (value: CharacteristicValue) => {
+        this.states.verticalSlatPosition = Math.round(value as number / 25) * 25;
+        const mapped = 4 - Math.round(this.states.verticalSlatPosition / 25) + 2;
+
+        this.log.info(`*** Slats set target position: ${this.states.verticalSlatPosition}, mapped=${mapped}`);
+
+        this.device.set_param(Device.DeviceParameters.V_SWING, mapped);
+
+        this.slatsService.updateCharacteristic(this.platform.Characteristic.TargetPosition, this.states.verticalSlatPosition);
+      });
+
+    this.slatsService.getCharacteristic(this.platform.Characteristic.CurrentPosition)
+      .onGet(async () => {
+        this.log.info(`Current vertical slat position: ${this.states.verticalSlatPosition}`);
+        return this.states.verticalSlatPosition;
+      });
   }
 
   updateCharacteristicsFromDeviceParams() {
+    if (this.states.skipNextUpdate) {
+      this.states.skipNextUpdate = false;
+      return;
+    }
+
     const params = this.device.get_params();
 
     if (params === undefined) {
@@ -275,16 +286,58 @@ export class GreeAirConditionerAccessory {
       this.platform.Characteristic.Active,
       powerOn,
     );
-    this.fanService.updateCharacteristic(
-      this.platform.Characteristic.CurrentFanState,
-      powerOn
-        ? this.platform.Characteristic.CurrentFanState.BLOWING_AIR
-        : this.platform.Characteristic.CurrentFanState.INACTIVE,
+
+    const xfanEnabled = params[Device.DeviceParameters.XFAN_ON.name] === true;
+    this.log.info(`xfanEnabled=${xfanEnabled}`);
+    this.xfanSwitchService.updateCharacteristic(
+      this.platform.Characteristic.On,
+      xfanEnabled ? 1 : 0,
     );
-    this.fanService.updateCharacteristic(
+
+    const turboEnabled = params[Device.DeviceParameters.TURBO_ON.name] === true;
+    this.log.info(`turboEnabled=${turboEnabled}`);
+    this.turboSwitchService.updateCharacteristic(
+      this.platform.Characteristic.On,
+      turboEnabled ? 1 : 0,
+    );
+
+    const ledEnabled = params[Device.DeviceParameters.LED_ON.name] === true;
+    this.log.info(`ledEnabled=${ledEnabled}`);
+    this.ledSwitchService.updateCharacteristic(
+      this.platform.Characteristic.On,
+      ledEnabled ? 1 : 0,
+    );
+
+    const fanSpeed = params[Device.DeviceParameters.FAN_SPEED.name] as number;
+    this.log.info(`fanSpeed=${fanSpeed}`);
+
+    if (fanSpeed > 0) {
+      this.states.manualFanSpeed = fanSpeed;
+      this.log.info(`Manual fan speed updated to ${this.states.manualFanSpeed}`);
+    }
+
+    this.manualFanService.updateCharacteristic(
       this.platform.Characteristic.Active,
-      powerOn,
+      fanSpeed !== 0
+        ? this.platform.Characteristic.Active.ACTIVE
+        : this.platform.Characteristic.Active.INACTIVE,
     );
+
+    this.manualFanService.updateCharacteristic(
+      this.platform.Characteristic.RotationSpeed,
+      fanSpeed * 20,
+    );
+
+    // this.manualFanService.updateCharacteristic(
+    //   this.platform.Characteristic.TargetFanState,
+    //   fanSpeed === 0
+    //     ? this.platform.Characteristic.TargetFanState.AUTO
+    //     : this.platform.Characteristic.TargetFanState.MANUAL,
+    // );
+    // this.manualFanService.updateCharacteristic(
+    //   this.platform.Characteristic.CurrentFanState,
+    //   this.platform.Characteristic.CurrentFanState.BLOWING_AIR,
+    // );
 
     const sensorTemp = params[Device.DeviceParameters.SENSOR_TEMP.name];
     if (sensorTemp) {
@@ -299,6 +352,48 @@ export class GreeAirConditionerAccessory {
       this.service.updateCharacteristic(
         this.platform.Characteristic.TargetTemperature,
         targetTemp,
+      );
+    }
+
+    const verticalSlastPosition = params[Device.DeviceParameters.V_SWING.name];
+    if (verticalSlastPosition) {
+      const p = verticalSlastPosition as number;
+
+      switch (p) {
+        case 0: // Default
+        case 1: // Swing: full-range
+        case 7: // Swing: 5/5
+        case 8: // Swing: 4/5
+        case 9: // Swing: 3/5
+        case 10: // Swing: 2/5
+        case 11: // Swing: 1/5
+          // Unsupported at the moment
+          this.states.verticalSlatPosition = 0;
+          break;
+        case 2: // Fixed: 1/5
+        case 3: // Fixed: 2/5
+        case 4: // Fixed: 3/5
+        case 5: // Fixed: 4/5
+        case 6: // Fixed: 5/5
+          this.states.verticalSlatPosition = (4 - (p - 2)) * 25; // Map [6..2] -> [0..100]
+          break;
+      }
+
+      this.log.info(`verticalSlatPosition=${verticalSlastPosition as number}, calculated=${this.states.verticalSlatPosition}`);
+
+      this.slatsService.setCharacteristic(
+        this.platform.Characteristic.CurrentPosition,
+        this.states.verticalSlatPosition,
+      );
+
+      this.slatsService.updateCharacteristic(
+        this.platform.Characteristic.TargetPosition,
+        this.states.verticalSlatPosition,
+      );
+
+      this.slatsService.setCharacteristic(
+        this.platform.Characteristic.PositionState,
+        this.platform.Characteristic.PositionState.STOPPED,
       );
     }
 
@@ -364,30 +459,28 @@ export class GreeAirConditionerAccessory {
         targetState,
       );
     }
+  }
 
-    const turboOn = params[Device.DeviceParameters.TURBO_ON.name] === true;
-    const fanSpeed = params[Device.DeviceParameters.FAN_SPEED.name];
-    if (fanSpeed) {
-      let rotationSpeed = 0;
+  createSimpleFunctionSwitchService(
+    id: string,
+    displayName: string,
+    onGetFunc: CharacteristicGetHandler,
+    onSetFunc: CharacteristicSetHandler,
+  ): Service {
+    const uniqueId = `${this.accessory.context.device.uniqueId}-${id}`;
 
-      if (fanSpeed === 0) {
-        // TODO turn on 'auto fan' switch
-      } else if (turboOn) {
-        rotationSpeed = 100;
-      } else if (fanSpeed >= 5) {
-        rotationSpeed = 75;
-      } else if (fanSpeed >= 3) {
-        rotationSpeed = 50;
-      } else {
-        rotationSpeed = 25;
-      }
+    this.log.info(`createSimpleFunctionSwitchService: uniqueId=${uniqueId}`);
 
-      this.log.info(`calculated RotationSpeed: ${rotationSpeed}`);
+    const service = this.accessory.getServiceById(this.platform.Service.Switch, uniqueId)
+      || this.accessory.addService(this.platform.Service.Switch, uniqueId, uniqueId);
 
-      this.fanService.updateCharacteristic(
-        this.platform.Characteristic.RotationSpeed,
-        rotationSpeed,
-      );
-    }
+    service.addOptionalCharacteristic(this.platform.Characteristic.Name);
+    service.setCharacteristic(this.platform.Characteristic.Name, `${this.accessory.displayName} ${displayName}`);
+
+    service.getCharacteristic(this.platform.Characteristic.On)
+      .onGet(onGetFunc)
+      .onSet(onSetFunc);
+
+    return service;
   }
 }
