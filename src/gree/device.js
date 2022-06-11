@@ -247,6 +247,15 @@ class Device extends events.Dispatcher {
       timers.clearInterval(this._taskInterval);
     }
 
+    get_param(param) {
+      if (param.name === undefined) {
+        // console.warn('Device: invalid input parameters given to get_param()');
+        return undefined;
+      }
+
+      return this._params[param.name];
+    }
+
     get_params() {
       return this._params;
     }

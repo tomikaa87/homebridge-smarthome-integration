@@ -9,6 +9,8 @@ export class GreeAirConditionerAccessory {
   private readonly turboSwitchService: Service;
   private readonly xfanSwitchService: Service;
   private readonly ledSwitchService: Service;
+  private readonly dryingModeSwitchService: Service;
+  private readonly fanOnlyModeSwitchService: Service;
   private readonly manualFanService: Service;
   private readonly slatsService: Service;
   private readonly device: Device.Device;
@@ -17,7 +19,6 @@ export class GreeAirConditionerAccessory {
     manualFanSpeed: 0,
     verticalSlatPosition: 0,
     skipNextUpdate: false,
-    // verticalSlatTargetPosition: 0,
   };
 
   private temps = {
@@ -57,58 +58,6 @@ export class GreeAirConditionerAccessory {
 
     this.setupDevice();
     this.setupBaseCharacteristics();
-
-    // TEST
-    this.service.getCharacteristic(this.platform.Characteristic.Active)
-      .onSet(async (value: CharacteristicValue) => {
-        this.log.info(`*** Active=${value as boolean}`);
-      });
-    this.service.getCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState)
-      .onSet(async (value: CharacteristicValue) => {
-        this.log.info(`*** TargetHeaterCoolerState=${value as number}`);
-      });
-    this.service.addOptionalCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature);
-    this.service.getCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature)
-      .onSet(async (value: CharacteristicValue) => {
-        this.log.info(`*** CoolingThresholdTemperature=${value}`);
-
-        this.temps.coolingThreshold = value as number;
-
-        if (Math.abs(this.temps.heatingThreshold - this.temps.coolingThreshold) < 4) {
-          const heatingThreshold = this.temps.coolingThreshold - 4;
-          this.service.setCharacteristic(
-            this.platform.Characteristic.HeatingThresholdTemperature,
-            heatingThreshold,
-          );
-          this.service.updateCharacteristic(
-            this.platform.Characteristic.HeatingThresholdTemperature,
-            heatingThreshold,
-          );
-        }
-
-        this.device.set_param(Device.DeviceParameters.TARGET_TEMP, this.temps.coolingThreshold);
-      });
-    this.service.addOptionalCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature);
-    this.service.getCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature)
-      .onSet(async (value: CharacteristicValue) => {
-        this.log.info(`*** HeatingThresholdTemperature=${value}`);
-
-        this.temps.heatingThreshold = value as number;
-
-        if (Math.abs(this.temps.heatingThreshold - this.temps.coolingThreshold) < 4) {
-          const coolingThreshold = this.temps.heatingThreshold + 4;
-          this.service.setCharacteristic(
-            this.platform.Characteristic.CoolingThresholdTemperature,
-            coolingThreshold,
-          );
-          this.service.updateCharacteristic(
-            this.platform.Characteristic.CoolingThresholdTemperature,
-            coolingThreshold,
-          );
-        }
-
-        this.device.set_param(Device.DeviceParameters.TARGET_TEMP, this.temps.heatingThreshold);
-      });
 
     this.turboSwitchService = this.createSimpleFunctionSwitchService(
       'TurboSwitch',
@@ -152,6 +101,20 @@ export class GreeAirConditionerAccessory {
       },
     );
 
+    this.dryingModeSwitchService = this.createSimpleFunctionSwitchService(
+      'DryingModeSwitch',
+      'Drying',
+      this.getDryingModeActiveState.bind(this),
+      this.setDryingModeActiveState.bind(this),
+    );
+
+    this.fanOnlyModeSwitchService = this.createSimpleFunctionSwitchService(
+      'FanOnlyModeSwitch',
+      'Fan only',
+      this.getFanOnlyModeActiveState.bind(this),
+      this.setFanOnlyModeActiveState.bind(this),
+    );
+
   }
 
   setupDevice() {
@@ -163,38 +126,89 @@ export class GreeAirConditionerAccessory {
   setupBaseCharacteristics() {
     this.log.info('setting up base characteristics');
 
-    this.service.setCharacteristic(this.platform.Characteristic.CurrentTemperature, 25);
-
     // TargetTemperature
-    this.service.setCharacteristic(this.platform.Characteristic.TargetTemperature, 25);
     this.service.getCharacteristic(this.platform.Characteristic.TargetTemperature)
       .onSet(async (value: CharacteristicValue) => {
         this.log.info(`*** Set target temperature of device: ${value as number}`);
         this.device.set_param(Device.DeviceParameters.TARGET_TEMP, value as number);
+        this.states.skipNextUpdate = true;
       });
 
-    // CurrentHeaterCoolerState
-    this.service.setCharacteristic(
-      this.platform.Characteristic.CurrentHeaterCoolerState,
-      this.platform.Characteristic.CurrentHeaterCoolerState.INACTIVE,
-    );
-
-    // TargetHeaterCoolerState
-    this.service.setCharacteristic(
-      this.platform.Characteristic.TargetHeaterCoolerState,
-      this.platform.Characteristic.TargetHeaterCoolerState.AUTO,
-    );
-
-    this.service.addOptionalCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature);
-    this.service.addOptionalCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature);
-    this.service.setCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature, 24);
-    this.service.setCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature, 24);
-
-    this.service.setCharacteristic(this.platform.Characteristic.Active, false);
     this.service.getCharacteristic(this.platform.Characteristic.Active)
       .onSet(async (value: CharacteristicValue) => {
         this.log.info(`*** Set power state of device: ${value as number}`);
         this.device.set_param(Device.DeviceParameters.POWER_ON, value as boolean);
+        this.states.skipNextUpdate = true;
+      });
+
+    // TargetHeaterCoolerState
+    this.service.getCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState)
+      .onSet(async (value: CharacteristicValue) => {
+        this.log.info(`set TargetHeaterCoolerState: ${value}`);
+
+        switch (value) {
+          case this.platform.Characteristic.TargetHeaterCoolerState.AUTO:
+            this.device.set_param(Device.DeviceParameters.MODE, Device.DeviceParameters.MODE.modes.AUTO);
+            return;
+
+          case this.platform.Characteristic.TargetHeaterCoolerState.COOL:
+            this.device.set_param(Device.DeviceParameters.MODE, Device.DeviceParameters.MODE.modes.COOL);
+            return;
+
+          case this.platform.Characteristic.TargetHeaterCoolerState.HEAT:
+            this.device.set_param(Device.DeviceParameters.MODE, Device.DeviceParameters.MODE.modes.HEAT);
+            return;
+        }
+
+        this.states.skipNextUpdate = true;
+      });
+
+    // CoolingThresholdTemperature
+    this.service.addOptionalCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature);
+    this.service.getCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature)
+      .onSet(async (value: CharacteristicValue) => {
+        this.log.info(`*** CoolingThresholdTemperature=${value}`);
+
+        this.temps.coolingThreshold = value as number;
+
+        // if (Math.abs(this.temps.heatingThreshold - this.temps.coolingThreshold) < 4) {
+        //   const heatingThreshold = this.temps.coolingThreshold - 4;
+        //   this.service.setCharacteristic(
+        //     this.platform.Characteristic.HeatingThresholdTemperature,
+        //     heatingThreshold,
+        //   );
+        //   this.service.updateCharacteristic(
+        //     this.platform.Characteristic.HeatingThresholdTemperature,
+        //     heatingThreshold,
+        //   );
+        // }
+
+        this.device.set_param(Device.DeviceParameters.TARGET_TEMP, this.temps.coolingThreshold);
+        this.states.skipNextUpdate = true;
+      });
+
+    // HeatingThresholdTemperature
+    this.service.addOptionalCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature);
+    this.service.getCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature)
+      .onSet(async (value: CharacteristicValue) => {
+        this.log.info(`*** HeatingThresholdTemperature=${value}`);
+
+        this.temps.heatingThreshold = value as number;
+
+        // if (Math.abs(this.temps.heatingThreshold - this.temps.coolingThreshold) < 4) {
+        //   const coolingThreshold = this.temps.heatingThreshold + 4;
+        //   this.service.setCharacteristic(
+        //     this.platform.Characteristic.CoolingThresholdTemperature,
+        //     coolingThreshold,
+        //   );
+        //   this.service.updateCharacteristic(
+        //     this.platform.Characteristic.CoolingThresholdTemperature,
+        //     coolingThreshold,
+        //   );
+        // }
+
+        this.device.set_param(Device.DeviceParameters.TARGET_TEMP, this.temps.heatingThreshold);
+        this.states.skipNextUpdate = true;
       });
   }
 
@@ -332,17 +346,6 @@ export class GreeAirConditionerAccessory {
       fanSpeed * 20,
     );
 
-    // this.manualFanService.updateCharacteristic(
-    //   this.platform.Characteristic.TargetFanState,
-    //   fanSpeed === 0
-    //     ? this.platform.Characteristic.TargetFanState.AUTO
-    //     : this.platform.Characteristic.TargetFanState.MANUAL,
-    // );
-    // this.manualFanService.updateCharacteristic(
-    //   this.platform.Characteristic.CurrentFanState,
-    //   this.platform.Characteristic.CurrentFanState.BLOWING_AIR,
-    // );
-
     const sensorTemp = params[Device.DeviceParameters.SENSOR_TEMP.name];
     if (sensorTemp) {
       this.service.updateCharacteristic(
@@ -462,6 +465,36 @@ export class GreeAirConditionerAccessory {
         this.platform.Characteristic.TargetHeaterCoolerState,
         targetState,
       );
+
+      this.updateExtraModeSwitchActiveStates();
+
+      if (targetState === this.platform.Characteristic.TargetHeaterCoolerState.COOL) {
+        const value = params[Device.DeviceParameters.TARGET_TEMP.name];
+
+        if (value !== this.temps.coolingThreshold) {
+          this.log.info(`updating CoolingThresholdTemperature from device, value=${value}`);
+
+          this.temps.coolingThreshold = value;
+
+          this.service.updateCharacteristic(
+            this.platform.Characteristic.CoolingThresholdTemperature,
+            this.temps.coolingThreshold,
+          );
+        }
+      } else if (targetState === this.platform.Characteristic.TargetHeaterCoolerState.HEAT) {
+        const value = params[Device.DeviceParameters.TARGET_TEMP.name];
+
+        if (value !== this.temps.heatingThreshold) {
+          this.log.info(`updating HeatingThresholdTemperature from device, value=${value}`);
+
+          this.temps.heatingThreshold = value;
+
+          this.service.updateCharacteristic(
+            this.platform.Characteristic.HeatingThresholdTemperature,
+            this.temps.heatingThreshold,
+          );
+        }
+      }
     }
   }
 
@@ -486,5 +519,46 @@ export class GreeAirConditionerAccessory {
       .onSet(onSetFunc);
 
     return service;
+  }
+
+  getDryingModeActiveState(): CharacteristicValue {
+    return this.device.get_param(Device.DeviceParameters.MODE) === Device.DeviceParameters.MODE.modes.DRY
+      ? this.platform.Characteristic.Active.ACTIVE
+      : this.platform.Characteristic.Active.INACTIVE;
+  }
+
+  getFanOnlyModeActiveState(): CharacteristicValue {
+    return this.device.get_param(Device.DeviceParameters.MODE) === Device.DeviceParameters.MODE.modes.FAN
+      ? this.platform.Characteristic.Active.ACTIVE
+      : this.platform.Characteristic.Active.INACTIVE;
+  }
+
+  setDryingModeActiveState(v: CharacteristicValue): void {
+    this.log.info(`setDryingModeActiveState: v=${v}`);
+
+    if (v as boolean) {
+      this.device.set_param(Device.DeviceParameters.MODE, Device.DeviceParameters.MODE.modes.DRY);
+    } else {
+      this.device.set_param(Device.DeviceParameters.MODE, Device.DeviceParameters.MODE.modes.AUTO);
+    }
+
+    this.updateExtraModeSwitchActiveStates();
+  }
+
+  setFanOnlyModeActiveState(v: CharacteristicValue): void {
+    this.log.info(`setFanOnlyModeActiveState: v=${v}`);
+
+    if (v as boolean) {
+      this.device.set_param(Device.DeviceParameters.MODE, Device.DeviceParameters.MODE.modes.FAN);
+    } else {
+      this.device.set_param(Device.DeviceParameters.MODE, Device.DeviceParameters.MODE.modes.AUTO);
+    }
+
+    this.updateExtraModeSwitchActiveStates();
+  }
+
+  updateExtraModeSwitchActiveStates(): void {
+    this.dryingModeSwitchService.updateCharacteristic(this.platform.Characteristic.Active, this.getDryingModeActiveState());
+    this.fanOnlyModeSwitchService.updateCharacteristic(this.platform.Characteristic.Active, this.getFanOnlyModeActiveState());
   }
 }
