@@ -1,4 +1,12 @@
-import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
+import {
+  API,
+  DynamicPlatformPlugin,
+  Logger,
+  PlatformAccessory,
+  PlatformConfig,
+  Service,
+  Characteristic,
+} from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 
@@ -8,6 +16,7 @@ import { IrrigationSystemAccessory } from './irrigationSystemAccessory';
 import { GreeAirConditionerAccessory } from './greeAirConditionerAccessory';
 import { ShutterControllerAccessory } from './shutterControllerAccessory';
 import { DoorbellAccessory } from './doorbellAccessory';
+import { BabyRoomAccessory } from './babyRoomAccessory';
 
 /**
  * HomebridgePlatform
@@ -119,6 +128,11 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
     this.log.info('Creating Doorbell Accessory');
     this.setupAccessory('doorbell1', 'Doorbell', (accessory: PlatformAccessory) => {
       new DoorbellAccessory(this, accessory, this.config);
+    });
+
+    this.log.info('Creating Baby Room Accessory');
+    this.setupAccessory('babyRoom', 'Baby room', (accessory: PlatformAccessory) => {
+      new BabyRoomAccessory(this, accessory, this.config);
     });
 
     // EXAMPLE ONLY
