@@ -11,12 +11,14 @@ import {
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 
 import { ThermostatAccessory } from './thermostatAccessory';
-import { BedroomTempSensorAccessory } from './bedroomTempSensorAccessory';
 import { IrrigationSystemAccessory } from './irrigationSystemAccessory';
 import { GreeAirConditionerAccessory } from './greeAirConditionerAccessory';
 import { ShutterControllerAccessory } from './shutterControllerAccessory';
 import { DoorbellAccessory } from './doorbellAccessory';
-import { BabyRoomAccessory } from './babyRoomAccessory';
+import { MqttTemperatureSensorAccessory } from './MqttTemperatureSensorAccessory';
+
+import * as mqtt from 'mqtt';
+import { MqttHumiditySensorAccessory } from './MqttHumiditySensorAccessory';
 
 /**
  * HomebridgePlatform
@@ -29,6 +31,8 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
 
   // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
+
+  private readonly mqttClient: mqtt.Client;
 
   constructor(
     public readonly log: Logger,
@@ -46,6 +50,9 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
       // run the method to discover / register your devices as accessories
       this.discoverDevices();
     });
+
+    this.log.info(`Connecting to the MQTT broker: url=${this.config.mqttBrokerUrl}`);
+    this.mqttClient = mqtt.connect(this.config.mqttBrokerUrl);
   }
 
   /**
@@ -130,9 +137,19 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
       new DoorbellAccessory(this, accessory, this.config);
     });
 
-    this.log.info('Creating Baby Room Accessory');
-    this.setupAccessory('babyRoom', 'Baby room', (accessory: PlatformAccessory) => {
-      new BabyRoomAccessory(this, accessory, this.config);
+    this.log.info('Creating Bedroom temperature sensor');
+    this.setupAccessory('bedroomTempSensor', 'Bedroom Temperature Sensor', (accessory: PlatformAccessory) => {
+      new MqttTemperatureSensorAccessory('smc/temp/current', this, accessory, this.mqttClient, (value: number) => value);
+    });
+
+    this.log.info('Creating Baby room temperature sensor');
+    this.setupAccessory('babyRoomTempSensor', 'Baby room Temperature Sensor', (accessory: PlatformAccessory) => {
+      new MqttTemperatureSensorAccessory('home/temperature/baby_room', this, accessory, this.mqttClient, (value: number) => value);
+    });
+
+    this.log.info('Creating Baby room humidity sensor');
+    this.setupAccessory('babyRoomHumiditySensor', 'Baby room Humidity Sensor', (accessory: PlatformAccessory) => {
+      new MqttHumiditySensorAccessory('home/humidity/baby_room', this, accessory, this.mqttClient, (value: number) => value);
     });
 
     // EXAMPLE ONLY
@@ -143,11 +160,6 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
         uniqueId: 'SmartHomeThermostat-1',
         displayName: 'Thermostat',
         deviceType: 'thermostat',
-      },
-      {
-        uniqueId: 'SmartHomeBedroomTempSensor-1',
-        displayName: 'Bedroom',
-        deviceType: 'bedroom-temp',
       },
       {
         uniqueId: 'IrrigationSystem-1',
@@ -178,8 +190,6 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
         // create the accessory handler for the restored accessory
         if (device.deviceType === 'thermostat') {
           new ThermostatAccessory(this, existingAccessory, this.config);
-        } else if (device.deviceType === 'bedroom-temp') {
-          new BedroomTempSensorAccessory(this, existingAccessory, this.config);
         } else if (device.deviceType === 'irrigation-system') {
           new IrrigationSystemAccessory(this, existingAccessory, this.config);
         }
@@ -202,8 +212,6 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
         // create the accessory handler for the newly create accessory
         if (device.deviceType === 'thermostat') {
           new ThermostatAccessory(this, accessory, this.config);
-        } else if (device.deviceType === 'bedroom-temp') {
-          new BedroomTempSensorAccessory(this, accessory, this.config);
         } else if (device.deviceType === 'irrigation-system') {
           new IrrigationSystemAccessory(this, accessory, this.config);
         }
