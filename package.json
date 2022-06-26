@@ -1,7 +1,7 @@
 {
   "displayName": "Smart Home Integration",
   "name": "@tomikaa87/homebridge-smarthome-integration",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "description": "Homebridge integration for various smart home devices",
   "license": "Apache-2.0",
   "repository": {

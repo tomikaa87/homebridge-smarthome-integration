@@ -68,6 +68,8 @@ export abstract class MqttSensorAccessory {
         const convertedValue = this.converter(parsed);
 
         if (convertedValue !== this.states.currentValue) {
+          this.states.currentValue = convertedValue;
+
           this.log.info(`handleIncomingMqttMessage: currentValue=${this.states.currentValue}`);
 
           this.currentValueUpdated();
