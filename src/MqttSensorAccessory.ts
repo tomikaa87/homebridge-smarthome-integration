@@ -65,11 +65,13 @@ export abstract class MqttSensorAccessory {
       const parsed = Number.parseFloat(payload.toString());
 
       if (!isNaN(parsed) && parsed >= -100 && parsed <= 100) {
-        this.states.currentValue = this.converter(parsed);
+        const convertedValue = this.converter(parsed);
 
-        this.log.info(`handleIncomingMqttMessage: currentValue=${this.states.currentValue}`);
+        if (convertedValue !== this.states.currentValue) {
+          this.log.info(`handleIncomingMqttMessage: currentValue=${this.states.currentValue}`);
 
-        this.currentValueUpdated();
+          this.currentValueUpdated();
+        }
       } else {
         this.log.warn('handleIncomingMqttMessage: payload is not a number');
       }
