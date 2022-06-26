@@ -139,7 +139,7 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
 
     this.log.info('Creating Bedroom temperature sensor');
     this.setupAccessory('bedroomTempSensor', 'Bedroom Temperature Sensor', (accessory: PlatformAccessory) => {
-      new MqttTemperatureSensorAccessory('smc/temp/current', this, accessory, this.mqttClient, (value: number) => value);
+      new MqttTemperatureSensorAccessory('home/temperature/bedroom', this, accessory, this.mqttClient, (value: number) => value);
     });
 
     this.log.info('Creating Baby room temperature sensor');
