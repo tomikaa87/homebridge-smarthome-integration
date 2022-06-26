@@ -60,7 +60,7 @@ export abstract class MqttSensorAccessory {
 
   private handleIncomingMqttMessage(topic: string, payload: Buffer): void {
     if (topic.toLowerCase() === this.topic) {
-      this.log.info(`handleIncomingMqttMessage: topic=${topic}, payload=${payload.toString()}`);
+      this.log.debug(`handleIncomingMqttMessage: topic=${topic}, payload=${payload.toString()}`);
 
       const parsed = Number.parseFloat(payload.toString());
 

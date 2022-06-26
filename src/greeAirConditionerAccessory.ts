@@ -306,32 +306,32 @@ export class GreeAirConditionerAccessory {
     );
 
     const xfanEnabled = params[Device.DeviceParameters.XFAN_ON.name] === true;
-    this.log.info(`xfanEnabled=${xfanEnabled}`);
+    this.log.debug(`xfanEnabled=${xfanEnabled}`);
     this.xfanSwitchService.updateCharacteristic(
       this.platform.Characteristic.On,
       xfanEnabled ? 1 : 0,
     );
 
     const turboEnabled = params[Device.DeviceParameters.TURBO_ON.name] === true;
-    this.log.info(`turboEnabled=${turboEnabled}`);
+    this.log.debug(`turboEnabled=${turboEnabled}`);
     this.turboSwitchService.updateCharacteristic(
       this.platform.Characteristic.On,
       turboEnabled ? 1 : 0,
     );
 
     const ledEnabled = params[Device.DeviceParameters.LED_ON.name] === true;
-    this.log.info(`ledEnabled=${ledEnabled}`);
+    this.log.debug(`ledEnabled=${ledEnabled}`);
     this.ledSwitchService.updateCharacteristic(
       this.platform.Characteristic.On,
       ledEnabled ? 1 : 0,
     );
 
     const fanSpeed = params[Device.DeviceParameters.FAN_SPEED.name] as number;
-    this.log.info(`fanSpeed=${fanSpeed}`);
+    this.log.debug(`fanSpeed=${fanSpeed}`);
 
     if (fanSpeed > 0) {
       this.states.manualFanSpeed = fanSpeed;
-      this.log.info(`Manual fan speed updated to ${this.states.manualFanSpeed}`);
+      this.log.debug(`Manual fan speed updated to ${this.states.manualFanSpeed}`);
     }
 
     this.manualFanService.updateCharacteristic(
@@ -386,7 +386,7 @@ export class GreeAirConditionerAccessory {
           break;
       }
 
-      this.log.info(`verticalSlatPosition=${verticalSlastPosition as number}, calculated=${this.states.verticalSlatPosition}`);
+      this.log.debug(`verticalSlatPosition=${verticalSlastPosition as number}, calculated=${this.states.verticalSlatPosition}`);
 
       this.slatsService.setCharacteristic(
         this.platform.Characteristic.CurrentPosition,
@@ -441,7 +441,7 @@ export class GreeAirConditionerAccessory {
 
         return this.platform.Characteristic.CurrentHeaterCoolerState.IDLE;
       })();
-      this.log.info(`calculated CurrentHeaterCoolerState: ${currentState}`);
+      this.log.debug(`calculated CurrentHeaterCoolerState: ${currentState}`);
 
       const targetState = ((): CharacteristicValue => {
         switch (mode) {
@@ -459,7 +459,7 @@ export class GreeAirConditionerAccessory {
 
         return this.platform.Characteristic.TargetHeaterCoolerState.AUTO;
       })();
-      this.log.info(`calculated TargetHeaterCoolerState: ${targetState}`);
+      this.log.debug(`calculated TargetHeaterCoolerState: ${targetState}`);
 
       this.service.updateCharacteristic(
         this.platform.Characteristic.TargetHeaterCoolerState,
@@ -506,7 +506,7 @@ export class GreeAirConditionerAccessory {
   ): Service {
     const uniqueId = `${this.accessory.context.device.uniqueId}-${id}`;
 
-    this.log.info(`createSimpleFunctionSwitchService: uniqueId=${uniqueId}`);
+    this.log.debug(`createSimpleFunctionSwitchService: uniqueId=${uniqueId}`);
 
     const service = this.accessory.getServiceById(this.platform.Service.Switch, uniqueId)
       || this.accessory.addService(this.platform.Service.Switch, uniqueId, uniqueId);
