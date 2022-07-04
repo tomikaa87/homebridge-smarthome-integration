@@ -124,7 +124,10 @@ export class IrrigationSystemAccessory {
     this.log = new CategoryLogger(platform.log, `IrrigationSystem(${this.accessory.displayName})`);
 
     this.log.info(`connecting to MQTT broker: url=${this.config.mqttBrokerUrl}`);
-    this.mqttClient = mqtt.connect(this.config.mqttBrokerUrl);
+    this.mqttClient = mqtt.connect(this.config.mqttBrokerUrl, {
+      username: this.config.mqttUsername,
+      password: this.config.mqttPassword,
+    });
     this.mqttClient.on('connect', this.subscribeToMqttTopics.bind(this));
     this.mqttClient.on('message', this.handleIncomintMqttMessage.bind(this));
 

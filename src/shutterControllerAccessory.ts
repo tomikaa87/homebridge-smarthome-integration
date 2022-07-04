@@ -76,7 +76,10 @@ export class ShutterControllerAccessory {
   ) {
     this.log = new CategoryLogger(this.platform.log, `ShutterControllerAccessory-${this.name}`);
 
-    this.mqttClient = mqtt.connect(this.config.mqttBrokerUrl);
+    this.mqttClient = mqtt.connect(this.config.mqttBrokerUrl, {
+      username: this.config.mqttUsername,
+      password: this.config.mqttPassword,
+    });
     this.mqttClient.on('connect', () => {
       this.log.info('MQTT client connected');
     });
