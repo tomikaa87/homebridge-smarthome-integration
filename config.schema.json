@@ -17,6 +17,18 @@
         "required": true,
         "default": "mqtt://localhost"
       },
+      "mqttUsername": {
+        "title": "MQTT Username",
+        "type": "string",
+        "required": true,
+        "default": ""
+      },
+      "mqttPassword": {
+        "title": "MQTT Password",
+        "type": "string",
+        "required": true,
+        "default": ""
+      },
       "zones": {
         "title": "Zones",
         "type": "array",

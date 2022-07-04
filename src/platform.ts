@@ -52,7 +52,10 @@ export class SmartHomeIntegrationPlatform implements DynamicPlatformPlugin {
     });
 
     this.log.info(`Connecting to the MQTT broker: url=${this.config.mqttBrokerUrl}`);
-    this.mqttClient = mqtt.connect(this.config.mqttBrokerUrl);
+    this.mqttClient = mqtt.connect(this.config.mqttBrokerUrl, {
+      username: this.config.mqttUsername,
+      password: this.config.mqttPassword,
+    });
   }
 
   /**
