@@ -170,7 +170,7 @@ export class GreeAirConditionerAccessory {
       .onSet(async (value: CharacteristicValue) => {
         this.log.info(`*** CoolingThresholdTemperature=${value}`);
 
-        this.temps.coolingThreshold = value as number;
+        this.temps.coolingThreshold = Math.round(value as number);
 
         // if (Math.abs(this.temps.heatingThreshold - this.temps.coolingThreshold) < 4) {
         //   const heatingThreshold = this.temps.coolingThreshold - 4;
@@ -194,7 +194,7 @@ export class GreeAirConditionerAccessory {
       .onSet(async (value: CharacteristicValue) => {
         this.log.info(`*** HeatingThresholdTemperature=${value}`);
 
-        this.temps.heatingThreshold = value as number;
+        this.temps.heatingThreshold = Math.round(value as number);
 
         // if (Math.abs(this.temps.heatingThreshold - this.temps.coolingThreshold) < 4) {
         //   const coolingThreshold = this.temps.heatingThreshold + 4;
