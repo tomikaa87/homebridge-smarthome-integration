@@ -6,19 +6,20 @@ import * as Device from './gree/device.js';
 export class GreeAirConditionerAccessory {
   private readonly log: CategoryLogger;
   private readonly service: Service;
-  private readonly turboSwitchService: Service;
-  private readonly xfanSwitchService: Service;
-  private readonly ledSwitchService: Service;
-  private readonly dryingModeSwitchService: Service;
-  private readonly fanOnlyModeSwitchService: Service;
-  private readonly manualFanService: Service;
-  private readonly slatsService: Service;
+  // private readonly turboSwitchService: Service;
+  // private readonly xfanSwitchService: Service;
+  // private readonly ledSwitchService: Service;
+  // private readonly dryingModeSwitchService: Service;
+  // private readonly fanOnlyModeSwitchService: Service;
+  // private readonly manualFanService: Service;
+  // private readonly slatsService: Service;
   private readonly device: Device.Device;
 
   private states = {
-    manualFanSpeed: 0,
-    verticalSlatPosition: 0,
-    skipNextUpdate: false,
+    // manualFanSpeed: 0,
+    // verticalSlatPosition: 0,
+    skipNextUpdates: 0,
+    updateSkipCount: 3,
   };
 
   private temps = {
@@ -43,77 +44,77 @@ export class GreeAirConditionerAccessory {
       || this.accessory.addService(this.platform.Service.HeaterCooler, this.accessory.displayName, this.accessory.displayName);
 
     // Fan service
-    const fanServiceName = `${this.accessory.context.device.uniqueId}-Fan`;
-    this.manualFanService = this.accessory.getServiceById(this.platform.Service.Fan, fanServiceName)
-      || this.accessory.addService(this.platform.Service.Fan, 'Fan', fanServiceName);
-    this.setupFanService();
+    // const fanServiceName = `${this.accessory.context.device.uniqueId}-Fan`;
+    // this.manualFanService = this.accessory.getServiceById(this.platform.Service.Fan, fanServiceName)
+    //   || this.accessory.addService(this.platform.Service.Fan, 'Fan', fanServiceName);
+    // this.setupFanService();
 
     // Slats service
-    const slatsServiceName = `${this.accessory.context.device.uniqueId}-Slats`;
-    this.slatsService = this.accessory.getServiceById(this.platform.Service.WindowCovering, slatsServiceName)
-      || this.accessory.addService(this.platform.Service.WindowCovering, slatsServiceName, slatsServiceName);
-    this.setupVerticalSlat();
+    // const slatsServiceName = `${this.accessory.context.device.uniqueId}-Slats`;
+    // this.slatsService = this.accessory.getServiceById(this.platform.Service.WindowCovering, slatsServiceName)
+    //   || this.accessory.addService(this.platform.Service.WindowCovering, slatsServiceName, slatsServiceName);
+    // this.setupVerticalSlat();
 
     this.device = new Device.Device(this.address);
 
     this.setupDevice();
     this.setupBaseCharacteristics();
 
-    this.turboSwitchService = this.createSimpleFunctionSwitchService(
-      'TurboSwitch',
-      'Turbo',
-      async () => {
-        return this.device.get_params()[Device.DeviceParameters.TURBO_ON.name] === true
-          ? 1
-          : 0;
-      },
-      async (value: CharacteristicValue) => {
-        this.log.info(`*** Turbo: ${value as number}`);
-        this.device.set_param(Device.DeviceParameters.TURBO_ON, value ? 1 : 0);
-      },
-    );
+    // this.turboSwitchService = this.createSimpleFunctionSwitchService(
+    //   'TurboSwitch',
+    //   'Turbo',
+    //   async () => {
+    //     return this.device.get_params()[Device.DeviceParameters.TURBO_ON.name] === true
+    //       ? 1
+    //       : 0;
+    //   },
+    //   async (value: CharacteristicValue) => {
+    //     this.log.info(`*** Turbo: ${value as number}`);
+    //     this.device.set_param(Device.DeviceParameters.TURBO_ON, value ? 1 : 0);
+    //   },
+    // );
 
-    this.xfanSwitchService = this.createSimpleFunctionSwitchService(
-      'XfanSwitch',
-      'X-Fan',
-      async () => {
-        return this.device.get_params()[Device.DeviceParameters.XFAN_ON.name] === true
-          ? 1
-          : 0;
-      },
-      async (value: CharacteristicValue) => {
-        this.log.info(`*** X-Fan: ${value as number}`);
-        this.device.set_param(Device.DeviceParameters.XFAN_ON, value ? 1 : 0);
-      },
-    );
+    // this.xfanSwitchService = this.createSimpleFunctionSwitchService(
+    //   'XfanSwitch',
+    //   'X-Fan',
+    //   async () => {
+    //     return this.device.get_params()[Device.DeviceParameters.XFAN_ON.name] === true
+    //       ? 1
+    //       : 0;
+    //   },
+    //   async (value: CharacteristicValue) => {
+    //     this.log.info(`*** X-Fan: ${value as number}`);
+    //     this.device.set_param(Device.DeviceParameters.XFAN_ON, value ? 1 : 0);
+    //   },
+    // );
 
-    this.ledSwitchService = this.createSimpleFunctionSwitchService(
-      'LedSwitch',
-      'LED',
-      async () => {
-        return this.device.get_params()[Device.DeviceParameters.LED_ON.name] === true
-          ? 1
-          : 0;
-      },
-      async (value: CharacteristicValue) => {
-        this.log.info(`*** LED: ${value as number}`);
-        this.device.set_param(Device.DeviceParameters.LED_ON, value ? 1 : 0);
-      },
-    );
+    // this.ledSwitchService = this.createSimpleFunctionSwitchService(
+    //   'LedSwitch',
+    //   'LED',
+    //   async () => {
+    //     return this.device.get_params()[Device.DeviceParameters.LED_ON.name] === true
+    //       ? 1
+    //       : 0;
+    //   },
+    //   async (value: CharacteristicValue) => {
+    //     this.log.info(`*** LED: ${value as number}`);
+    //     this.device.set_param(Device.DeviceParameters.LED_ON, value ? 1 : 0);
+    //   },
+    // );
 
-    this.dryingModeSwitchService = this.createSimpleFunctionSwitchService(
-      'DryingModeSwitch',
-      'Drying',
-      this.getDryingModeActiveState.bind(this),
-      this.setDryingModeActiveState.bind(this),
-    );
+    // this.dryingModeSwitchService = this.createSimpleFunctionSwitchService(
+    //   'DryingModeSwitch',
+    //   'Drying',
+    //   this.getDryingModeActiveState.bind(this),
+    //   this.setDryingModeActiveState.bind(this),
+    // );
 
-    this.fanOnlyModeSwitchService = this.createSimpleFunctionSwitchService(
-      'FanOnlyModeSwitch',
-      'Fan only',
-      this.getFanOnlyModeActiveState.bind(this),
-      this.setFanOnlyModeActiveState.bind(this),
-    );
+    // this.fanOnlyModeSwitchService = this.createSimpleFunctionSwitchService(
+    //   'FanOnlyModeSwitch',
+    //   'Fan only',
+    //   this.getFanOnlyModeActiveState.bind(this),
+    //   this.setFanOnlyModeActiveState.bind(this),
+    // );
 
   }
 
@@ -131,14 +132,14 @@ export class GreeAirConditionerAccessory {
       .onSet(async (value: CharacteristicValue) => {
         this.log.info(`*** Set target temperature of device: ${value as number}`);
         this.device.set_param(Device.DeviceParameters.TARGET_TEMP, value as number);
-        this.states.skipNextUpdate = true;
+        this.states.skipNextUpdates = this.states.updateSkipCount;
       });
 
     this.service.getCharacteristic(this.platform.Characteristic.Active)
       .onSet(async (value: CharacteristicValue) => {
         this.log.info(`*** Set power state of device: ${value as number}`);
         this.device.set_param(Device.DeviceParameters.POWER_ON, value as boolean);
-        this.states.skipNextUpdate = true;
+        this.states.skipNextUpdates = this.states.updateSkipCount;
       });
 
     // TargetHeaterCoolerState
@@ -160,7 +161,7 @@ export class GreeAirConditionerAccessory {
             return;
         }
 
-        this.states.skipNextUpdate = true;
+        this.states.skipNextUpdates = this.states.updateSkipCount;
       });
 
     // CoolingThresholdTemperature
@@ -184,7 +185,7 @@ export class GreeAirConditionerAccessory {
         // }
 
         this.device.set_param(Device.DeviceParameters.TARGET_TEMP, this.temps.coolingThreshold);
-        this.states.skipNextUpdate = true;
+        this.states.skipNextUpdates = this.states.updateSkipCount;
       });
 
     // HeatingThresholdTemperature
@@ -208,85 +209,85 @@ export class GreeAirConditionerAccessory {
         // }
 
         this.device.set_param(Device.DeviceParameters.TARGET_TEMP, this.temps.heatingThreshold);
-        this.states.skipNextUpdate = true;
+        this.states.skipNextUpdates = this.states.updateSkipCount;
       });
   }
 
-  setupFanService() {
-    this.manualFanService.addOptionalCharacteristic(this.platform.Characteristic.Name);
-    this.manualFanService.setCharacteristic(this.platform.Characteristic.Name, `${this.accessory.displayName} Manual Fan`);
+  // setupFanService() {
+  //   this.manualFanService.addOptionalCharacteristic(this.platform.Characteristic.Name);
+  //   this.manualFanService.setCharacteristic(this.platform.Characteristic.Name, `${this.accessory.displayName} Manual Fan`);
 
-    this.manualFanService.addOptionalCharacteristic(this.platform.Characteristic.RotationSpeed);
+  //   this.manualFanService.addOptionalCharacteristic(this.platform.Characteristic.RotationSpeed);
 
-    this.manualFanService.getCharacteristic(this.platform.Characteristic.RotationSpeed)
-      .onSet(async (value: CharacteristicValue) => {
-        const speed = Math.round(value as number / 20);
+  //   this.manualFanService.getCharacteristic(this.platform.Characteristic.RotationSpeed)
+  //     .onSet(async (value: CharacteristicValue) => {
+  //       const speed = Math.round(value as number / 20);
 
-        this.log.info(`Set manual fan RotationSpeed: value=${value as number}, speed=${speed}`);
+  //       this.log.info(`Set manual fan RotationSpeed: value=${value as number}, speed=${speed}`);
 
-        this.device.set_param(Device.DeviceParameters.FAN_SPEED, speed);
+  //       this.device.set_param(Device.DeviceParameters.FAN_SPEED, speed);
 
-        if (speed === 0) {
-          this.log.info('Deactivating manual fan, RotationSpeed == 0');
+  //       if (speed === 0) {
+  //         this.log.info('Deactivating manual fan, RotationSpeed == 0');
 
-          this.manualFanService.updateCharacteristic(
-            this.platform.Characteristic.Active,
-            this.platform.Characteristic.Active.INACTIVE,
-          );
-        }
+  //         this.manualFanService.updateCharacteristic(
+  //           this.platform.Characteristic.Active,
+  //           this.platform.Characteristic.Active.INACTIVE,
+  //         );
+  //       }
 
-        // Workaround to avoid overwriting the new value with the old one
-        this.states.skipNextUpdate = true;
-      });
+  //       // Workaround to avoid overwriting the new value with the old one
+  //       this.states.skipNextUpdate = true;
+  //     });
 
-    this.manualFanService.getCharacteristic(this.platform.Characteristic.Active)
-      .onSet(async (value: CharacteristicValue) => {
-        this.log.info(`Set manual fan Active state: ${value as number}`);
+  //   this.manualFanService.getCharacteristic(this.platform.Characteristic.Active)
+  //     .onSet(async (value: CharacteristicValue) => {
+  //       this.log.info(`Set manual fan Active state: ${value as number}`);
 
-        if (value as boolean) {
-          this.log.info(`Restoring previous manual fan speed: ${this.states.manualFanSpeed}`);
+  //       if (value as boolean) {
+  //         this.log.info(`Restoring previous manual fan speed: ${this.states.manualFanSpeed}`);
 
-          this.device.set_param(Device.DeviceParameters.FAN_SPEED, this.states.manualFanSpeed);
-        } else {
-          this.log.info('Deactivating manual fan, Active == false');
+  //         this.device.set_param(Device.DeviceParameters.FAN_SPEED, this.states.manualFanSpeed);
+  //       } else {
+  //         this.log.info('Deactivating manual fan, Active == false');
 
-          this.device.set_param(Device.DeviceParameters.FAN_SPEED, 0);
-        }
+  //         this.device.set_param(Device.DeviceParameters.FAN_SPEED, 0);
+  //       }
 
-        // Workaround to avoid overwriting the new value with the old one
-        this.states.skipNextUpdate = true;
-      });
-  }
+  //       // Workaround to avoid overwriting the new value with the old one
+  //       this.states.skipNextUpdate = true;
+  //     });
+  // }
 
-  setupVerticalSlat(): void {
-    this.slatsService.addOptionalCharacteristic(this.platform.Characteristic.Name);
-    this.slatsService.setCharacteristic(this.platform.Characteristic.Name, `${this.accessory.displayName} Vertical Slat`);
+  // setupVerticalSlat(): void {
+  //   this.slatsService.addOptionalCharacteristic(this.platform.Characteristic.Name);
+  //   this.slatsService.setCharacteristic(this.platform.Characteristic.Name, `${this.accessory.displayName} Vertical Slat`);
 
-    this.slatsService.getCharacteristic(this.platform.Characteristic.TargetPosition)
-      .onGet(async () => {
-        return this.states.verticalSlatPosition;
-      })
-      .onSet(async (value: CharacteristicValue) => {
-        this.states.verticalSlatPosition = Math.round(value as number / 25) * 25;
-        const mapped = 4 - Math.round(this.states.verticalSlatPosition / 25) + 2;
+  //   this.slatsService.getCharacteristic(this.platform.Characteristic.TargetPosition)
+  //     .onGet(async () => {
+  //       return this.states.verticalSlatPosition;
+  //     })
+  //     .onSet(async (value: CharacteristicValue) => {
+  //       this.states.verticalSlatPosition = Math.round(value as number / 25) * 25;
+  //       const mapped = 4 - Math.round(this.states.verticalSlatPosition / 25) + 2;
 
-        this.log.info(`*** Slats set target position: ${this.states.verticalSlatPosition}, mapped=${mapped}`);
+  //       this.log.info(`*** Slats set target position: ${this.states.verticalSlatPosition}, mapped=${mapped}`);
 
-        this.device.set_param(Device.DeviceParameters.V_SWING, mapped);
+  //       this.device.set_param(Device.DeviceParameters.V_SWING, mapped);
 
-        this.slatsService.updateCharacteristic(this.platform.Characteristic.TargetPosition, this.states.verticalSlatPosition);
-      });
+  //       this.slatsService.updateCharacteristic(this.platform.Characteristic.TargetPosition, this.states.verticalSlatPosition);
+  //     });
 
-    this.slatsService.getCharacteristic(this.platform.Characteristic.CurrentPosition)
-      .onGet(async () => {
-        this.log.info(`Current vertical slat position: ${this.states.verticalSlatPosition}`);
-        return this.states.verticalSlatPosition;
-      });
-  }
+  //   this.slatsService.getCharacteristic(this.platform.Characteristic.CurrentPosition)
+  //     .onGet(async () => {
+  //       this.log.info(`Current vertical slat position: ${this.states.verticalSlatPosition}`);
+  //       return this.states.verticalSlatPosition;
+  //     });
+  // }
 
   updateCharacteristicsFromDeviceParams() {
-    if (this.states.skipNextUpdate) {
-      this.states.skipNextUpdate = false;
+    if (this.states.skipNextUpdates > 0) {
+      --this.states.skipNextUpdates;
       return;
     }
 
@@ -305,46 +306,46 @@ export class GreeAirConditionerAccessory {
       powerOn,
     );
 
-    const xfanEnabled = params[Device.DeviceParameters.XFAN_ON.name] === true;
-    this.log.debug(`xfanEnabled=${xfanEnabled}`);
-    this.xfanSwitchService.updateCharacteristic(
-      this.platform.Characteristic.On,
-      xfanEnabled ? 1 : 0,
-    );
+    // const xfanEnabled = params[Device.DeviceParameters.XFAN_ON.name] === true;
+    // this.log.debug(`xfanEnabled=${xfanEnabled}`);
+    // this.xfanSwitchService.updateCharacteristic(
+    //   this.platform.Characteristic.On,
+    //   xfanEnabled ? 1 : 0,
+    // );
 
-    const turboEnabled = params[Device.DeviceParameters.TURBO_ON.name] === true;
-    this.log.debug(`turboEnabled=${turboEnabled}`);
-    this.turboSwitchService.updateCharacteristic(
-      this.platform.Characteristic.On,
-      turboEnabled ? 1 : 0,
-    );
+    // const turboEnabled = params[Device.DeviceParameters.TURBO_ON.name] === true;
+    // this.log.debug(`turboEnabled=${turboEnabled}`);
+    // this.turboSwitchService.updateCharacteristic(
+    //   this.platform.Characteristic.On,
+    //   turboEnabled ? 1 : 0,
+    // );
 
-    const ledEnabled = params[Device.DeviceParameters.LED_ON.name] === true;
-    this.log.debug(`ledEnabled=${ledEnabled}`);
-    this.ledSwitchService.updateCharacteristic(
-      this.platform.Characteristic.On,
-      ledEnabled ? 1 : 0,
-    );
+    // const ledEnabled = params[Device.DeviceParameters.LED_ON.name] === true;
+    // this.log.debug(`ledEnabled=${ledEnabled}`);
+    // this.ledSwitchService.updateCharacteristic(
+    //   this.platform.Characteristic.On,
+    //   ledEnabled ? 1 : 0,
+    // );
 
-    const fanSpeed = params[Device.DeviceParameters.FAN_SPEED.name] as number;
-    this.log.debug(`fanSpeed=${fanSpeed}`);
+    // const fanSpeed = params[Device.DeviceParameters.FAN_SPEED.name] as number;
+    // this.log.debug(`fanSpeed=${fanSpeed}`);
 
-    if (fanSpeed > 0) {
-      this.states.manualFanSpeed = fanSpeed;
-      this.log.debug(`Manual fan speed updated to ${this.states.manualFanSpeed}`);
-    }
+    // if (fanSpeed > 0) {
+    //   this.states.manualFanSpeed = fanSpeed;
+    //   this.log.debug(`Manual fan speed updated to ${this.states.manualFanSpeed}`);
+    // }
 
-    this.manualFanService.updateCharacteristic(
-      this.platform.Characteristic.Active,
-      fanSpeed !== 0
-        ? this.platform.Characteristic.Active.ACTIVE
-        : this.platform.Characteristic.Active.INACTIVE,
-    );
+    // this.manualFanService.updateCharacteristic(
+    //   this.platform.Characteristic.Active,
+    //   fanSpeed !== 0
+    //     ? this.platform.Characteristic.Active.ACTIVE
+    //     : this.platform.Characteristic.Active.INACTIVE,
+    // );
 
-    this.manualFanService.updateCharacteristic(
-      this.platform.Characteristic.RotationSpeed,
-      fanSpeed * 20,
-    );
+    // this.manualFanService.updateCharacteristic(
+    //   this.platform.Characteristic.RotationSpeed,
+    //   fanSpeed * 20,
+    // );
 
     const sensorTemp = params[Device.DeviceParameters.SENSOR_TEMP.name];
     if (sensorTemp) {
@@ -362,47 +363,47 @@ export class GreeAirConditionerAccessory {
       );
     }
 
-    const verticalSlastPosition = params[Device.DeviceParameters.V_SWING.name];
-    if (verticalSlastPosition) {
-      const p = verticalSlastPosition as number;
+    // const verticalSlastPosition = params[Device.DeviceParameters.V_SWING.name];
+    // if (verticalSlastPosition) {
+    //   const p = verticalSlastPosition as number;
 
-      switch (p) {
-        case 0: // Default
-        case 1: // Swing: full-range
-        case 7: // Swing: 5/5
-        case 8: // Swing: 4/5
-        case 9: // Swing: 3/5
-        case 10: // Swing: 2/5
-        case 11: // Swing: 1/5
-          // Unsupported at the moment
-          this.states.verticalSlatPosition = 0;
-          break;
-        case 2: // Fixed: 1/5
-        case 3: // Fixed: 2/5
-        case 4: // Fixed: 3/5
-        case 5: // Fixed: 4/5
-        case 6: // Fixed: 5/5
-          this.states.verticalSlatPosition = (4 - (p - 2)) * 25; // Map [6..2] -> [0..100]
-          break;
-      }
+    //   switch (p) {
+    //     case 0: // Default
+    //     case 1: // Swing: full-range
+    //     case 7: // Swing: 5/5
+    //     case 8: // Swing: 4/5
+    //     case 9: // Swing: 3/5
+    //     case 10: // Swing: 2/5
+    //     case 11: // Swing: 1/5
+    //       // Unsupported at the moment
+    //       this.states.verticalSlatPosition = 0;
+    //       break;
+    //     case 2: // Fixed: 1/5
+    //     case 3: // Fixed: 2/5
+    //     case 4: // Fixed: 3/5
+    //     case 5: // Fixed: 4/5
+    //     case 6: // Fixed: 5/5
+    //       this.states.verticalSlatPosition = (4 - (p - 2)) * 25; // Map [6..2] -> [0..100]
+    //       break;
+    //   }
 
-      this.log.debug(`verticalSlatPosition=${verticalSlastPosition as number}, calculated=${this.states.verticalSlatPosition}`);
+    //   this.log.debug(`verticalSlatPosition=${verticalSlastPosition as number}, calculated=${this.states.verticalSlatPosition}`);
 
-      this.slatsService.setCharacteristic(
-        this.platform.Characteristic.CurrentPosition,
-        this.states.verticalSlatPosition,
-      );
+    //   this.slatsService.setCharacteristic(
+    //     this.platform.Characteristic.CurrentPosition,
+    //     this.states.verticalSlatPosition,
+    //   );
 
-      this.slatsService.updateCharacteristic(
-        this.platform.Characteristic.TargetPosition,
-        this.states.verticalSlatPosition,
-      );
+    //   this.slatsService.updateCharacteristic(
+    //     this.platform.Characteristic.TargetPosition,
+    //     this.states.verticalSlatPosition,
+    //   );
 
-      this.slatsService.setCharacteristic(
-        this.platform.Characteristic.PositionState,
-        this.platform.Characteristic.PositionState.STOPPED,
-      );
-    }
+    //   this.slatsService.setCharacteristic(
+    //     this.platform.Characteristic.PositionState,
+    //     this.platform.Characteristic.PositionState.STOPPED,
+    //   );
+    // }
 
     const mode = params[Device.DeviceParameters.MODE.name];
     if (mode) {
@@ -466,7 +467,7 @@ export class GreeAirConditionerAccessory {
         targetState,
       );
 
-      this.updateExtraModeSwitchActiveStates();
+      // this.updateExtraModeSwitchActiveStates();
 
       if (targetState === this.platform.Characteristic.TargetHeaterCoolerState.COOL) {
         const value = params[Device.DeviceParameters.TARGET_TEMP.name];
@@ -521,44 +522,44 @@ export class GreeAirConditionerAccessory {
     return service;
   }
 
-  getDryingModeActiveState(): CharacteristicValue {
-    return this.device.get_param(Device.DeviceParameters.MODE) === Device.DeviceParameters.MODE.modes.DRY
-      ? this.platform.Characteristic.Active.ACTIVE
-      : this.platform.Characteristic.Active.INACTIVE;
-  }
+  // getDryingModeActiveState(): CharacteristicValue {
+  //   return this.device.get_param(Device.DeviceParameters.MODE) === Device.DeviceParameters.MODE.modes.DRY
+  //     ? this.platform.Characteristic.Active.ACTIVE
+  //     : this.platform.Characteristic.Active.INACTIVE;
+  // }
 
-  getFanOnlyModeActiveState(): CharacteristicValue {
-    return this.device.get_param(Device.DeviceParameters.MODE) === Device.DeviceParameters.MODE.modes.FAN
-      ? this.platform.Characteristic.Active.ACTIVE
-      : this.platform.Characteristic.Active.INACTIVE;
-  }
+  // getFanOnlyModeActiveState(): CharacteristicValue {
+  //   return this.device.get_param(Device.DeviceParameters.MODE) === Device.DeviceParameters.MODE.modes.FAN
+  //     ? this.platform.Characteristic.Active.ACTIVE
+  //     : this.platform.Characteristic.Active.INACTIVE;
+  // }
 
-  setDryingModeActiveState(v: CharacteristicValue): void {
-    this.log.info(`setDryingModeActiveState: v=${v}`);
+  // setDryingModeActiveState(v: CharacteristicValue): void {
+  //   this.log.info(`setDryingModeActiveState: v=${v}`);
 
-    if (v as boolean) {
-      this.device.set_param(Device.DeviceParameters.MODE, Device.DeviceParameters.MODE.modes.DRY);
-    } else {
-      this.device.set_param(Device.DeviceParameters.MODE, Device.DeviceParameters.MODE.modes.AUTO);
-    }
+  //   if (v as boolean) {
+  //     this.device.set_param(Device.DeviceParameters.MODE, Device.DeviceParameters.MODE.modes.DRY);
+  //   } else {
+  //     this.device.set_param(Device.DeviceParameters.MODE, Device.DeviceParameters.MODE.modes.AUTO);
+  //   }
 
-    this.updateExtraModeSwitchActiveStates();
-  }
+  //   this.updateExtraModeSwitchActiveStates();
+  // }
 
-  setFanOnlyModeActiveState(v: CharacteristicValue): void {
-    this.log.info(`setFanOnlyModeActiveState: v=${v}`);
+  // setFanOnlyModeActiveState(v: CharacteristicValue): void {
+  //   this.log.info(`setFanOnlyModeActiveState: v=${v}`);
 
-    if (v as boolean) {
-      this.device.set_param(Device.DeviceParameters.MODE, Device.DeviceParameters.MODE.modes.FAN);
-    } else {
-      this.device.set_param(Device.DeviceParameters.MODE, Device.DeviceParameters.MODE.modes.AUTO);
-    }
+  //   if (v as boolean) {
+  //     this.device.set_param(Device.DeviceParameters.MODE, Device.DeviceParameters.MODE.modes.FAN);
+  //   } else {
+  //     this.device.set_param(Device.DeviceParameters.MODE, Device.DeviceParameters.MODE.modes.AUTO);
+  //   }
 
-    this.updateExtraModeSwitchActiveStates();
-  }
+  //   this.updateExtraModeSwitchActiveStates();
+  // }
 
-  updateExtraModeSwitchActiveStates(): void {
-    this.dryingModeSwitchService.updateCharacteristic(this.platform.Characteristic.Active, this.getDryingModeActiveState());
-    this.fanOnlyModeSwitchService.updateCharacteristic(this.platform.Characteristic.Active, this.getFanOnlyModeActiveState());
-  }
+  // updateExtraModeSwitchActiveStates(): void {
+  //   this.dryingModeSwitchService.updateCharacteristic(this.platform.Characteristic.Active, this.getDryingModeActiveState());
+  //   this.fanOnlyModeSwitchService.updateCharacteristic(this.platform.Characteristic.Active, this.getFanOnlyModeActiveState());
+  // }
 }
