@@ -119,25 +119,25 @@ export class GreeAirConditionerAccessory {
   }
 
   setupDevice() {
-    this.log.info('setting up the device');
+    this.log.debug('setting up the device');
 
     this.device.on('params', this.updateCharacteristicsFromDeviceParams.bind(this));
   }
 
   setupBaseCharacteristics() {
-    this.log.info('setting up base characteristics');
+    this.log.debug('setting up base characteristics');
 
     // TargetTemperature
     this.service.getCharacteristic(this.platform.Characteristic.TargetTemperature)
       .onSet(async (value: CharacteristicValue) => {
-        this.log.info(`*** Set target temperature of device: ${value as number}`);
+        this.log.debug(`*** Set target temperature of device: ${value as number}`);
         this.device.set_param(Device.DeviceParameters.TARGET_TEMP, value as number);
         this.states.skipNextUpdates = this.states.updateSkipCount;
       });
 
     this.service.getCharacteristic(this.platform.Characteristic.Active)
       .onSet(async (value: CharacteristicValue) => {
-        this.log.info(`*** Set power state of device: ${value as number}`);
+        this.log.debug(`*** Set power state of device: ${value as number}`);
         this.device.set_param(Device.DeviceParameters.POWER_ON, value as boolean);
         this.states.skipNextUpdates = this.states.updateSkipCount;
       });
@@ -145,7 +145,7 @@ export class GreeAirConditionerAccessory {
     // TargetHeaterCoolerState
     this.service.getCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState)
       .onSet(async (value: CharacteristicValue) => {
-        this.log.info(`set TargetHeaterCoolerState: ${value}`);
+        this.log.debug(`set TargetHeaterCoolerState: ${value}`);
 
         switch (value) {
           case this.platform.Characteristic.TargetHeaterCoolerState.AUTO:
@@ -168,7 +168,7 @@ export class GreeAirConditionerAccessory {
     this.service.addOptionalCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature);
     this.service.getCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature)
       .onSet(async (value: CharacteristicValue) => {
-        this.log.info(`*** CoolingThresholdTemperature=${value}`);
+        this.log.debug(`*** CoolingThresholdTemperature=${value}`);
 
         this.temps.coolingThreshold = Math.round(value as number);
 
@@ -192,7 +192,7 @@ export class GreeAirConditionerAccessory {
     this.service.addOptionalCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature);
     this.service.getCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature)
       .onSet(async (value: CharacteristicValue) => {
-        this.log.info(`*** HeatingThresholdTemperature=${value}`);
+        this.log.debug(`*** HeatingThresholdTemperature=${value}`);
 
         this.temps.heatingThreshold = Math.round(value as number);
 
@@ -473,7 +473,7 @@ export class GreeAirConditionerAccessory {
         const value = params[Device.DeviceParameters.TARGET_TEMP.name];
 
         if (value !== this.temps.coolingThreshold) {
-          this.log.info(`updating CoolingThresholdTemperature from device, value=${value}`);
+          this.log.debug(`updating CoolingThresholdTemperature from device, value=${value}`);
 
           this.temps.coolingThreshold = value;
 
@@ -486,7 +486,7 @@ export class GreeAirConditionerAccessory {
         const value = params[Device.DeviceParameters.TARGET_TEMP.name];
 
         if (value !== this.temps.heatingThreshold) {
-          this.log.info(`updating HeatingThresholdTemperature from device, value=${value}`);
+          this.log.debug(`updating HeatingThresholdTemperature from device, value=${value}`);
 
           this.temps.heatingThreshold = value;
 

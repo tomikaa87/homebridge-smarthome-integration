@@ -54,7 +54,7 @@ export abstract class MqttSensorAccessory {
   protected abstract currentValueUpdated(): void;
 
   private subscribeToMqttTopics(): void {
-    this.log.info(`subscribeToMqttTopics: topic=${this.topic}`);
+    this.log.debug(`subscribeToMqttTopics: topic=${this.topic}`);
     this.mqttClient.subscribe(this.topic);
   }
 
@@ -70,7 +70,7 @@ export abstract class MqttSensorAccessory {
         if (convertedValue !== this.states.currentValue) {
           this.states.currentValue = convertedValue;
 
-          this.log.info(`handleIncomingMqttMessage: currentValue=${this.states.currentValue}`);
+          this.log.debug(`handleIncomingMqttMessage: currentValue=${this.states.currentValue}`);
 
           this.currentValueUpdated();
         }
