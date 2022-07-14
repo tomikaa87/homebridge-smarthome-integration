@@ -25,7 +25,7 @@ export class DoorbellAccessory {
         `${this.accessory.context.device.uniqueId}(${this.accessory.context.device.displayName})`,
       );
 
-      this.log.info(`connecting to MQTT broker: url=${this.config.mqttBrokerUrl}`);
+      this.log.debug(`connecting to MQTT broker: url=${this.config.mqttBrokerUrl}`);
       this.mqttClient = mqtt.connect(this.config.mqttBrokerUrl, {
         username: this.config.mqttUsername,
         password: this.config.mqttPassword,
@@ -62,7 +62,7 @@ export class DoorbellAccessory {
     }
 
     subscribeToMqttTopics(): void {
-      this.log.info('subscribeToMqttTopics');
+      this.log.debug('subscribeToMqttTopics');
       this.mqttClient.subscribe('doorphone/ringing');
       this.mqttClient.subscribe('doorphone/muted');
     }
@@ -72,30 +72,30 @@ export class DoorbellAccessory {
 
       if (topic.toLowerCase() === 'doorphone/ringing') {
         this.states.ringing = Number.parseInt(payload.toString()) === 1;
-        this.log.info(`handleIncomingMqttMessage: ringing=${this.states.ringing}`);
+        this.log.debug(`handleIncomingMqttMessage: ringing=${this.states.ringing}`);
         this.service.updateCharacteristic(this.platform.Characteristic.MotionDetected, this.states.ringing);
       }
 
       if (topic.toLowerCase() === 'doorphone/muted') {
         this.states.ringerMuted = Number.parseInt(payload.toString()) === 1;
-        this.log.info(`handleIncomingMqttMessage: ringerMuted=${this.states.ringerMuted}`);
+        this.log.debug(`handleIncomingMqttMessage: ringerMuted=${this.states.ringerMuted}`);
         this.muteSwitchService.updateCharacteristic(this.platform.Characteristic.On, this.states.ringerMuted);
       }
     }
 
     async getRingingState(): Promise<CharacteristicValue> {
-      this.log.info(`getRingingState: ${this.states.ringing}`);
+      this.log.debug(`getRingingState: ${this.states.ringing}`);
       return this.states.ringing;
     }
 
     async getMuteSwitchOn(): Promise<CharacteristicValue> {
-      this.log.info(`getMuteSwitchOn: ${this.states.ringerMuted}`);
+      this.log.debug(`getMuteSwitchOn: ${this.states.ringerMuted}`);
       return this.states.ringerMuted;
     }
 
     async setMuteSwitchOn(value: CharacteristicValue) {
       this.states.ringerMuted = value as boolean;
-      this.log.info(`setMuteSwitchOn: ${this.states.ringerMuted}`);
+      this.log.debug(`setMuteSwitchOn: ${this.states.ringerMuted}`);
 
       this.mqttClient.publish('doorphone/mute', this.states.ringerMuted ? '1' : '0');
     }

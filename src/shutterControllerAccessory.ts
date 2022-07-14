@@ -50,7 +50,7 @@ class ShutterControl {
   setPosition(pos: number): void {
     const mqttSetTopic = `home/shutters/${this.mqttSubTopic}/state/set`;
 
-    this.log.info(`setPosition: pos=${pos}, mqttSetTopic=${mqttSetTopic}`);
+    this.log.debug(`setPosition: pos=${pos}, mqttSetTopic=${mqttSetTopic}`);
 
     this.position = pos;
 
@@ -81,7 +81,7 @@ export class ShutterControllerAccessory {
       password: this.config.mqttPassword,
     });
     this.mqttClient.on('connect', () => {
-      this.log.info('MQTT client connected');
+      this.log.debug('MQTT client connected');
     });
 
     this.control = new ShutterControl(this.name, platform, accessory, this.mqttClient, this.mqttSubTopic);

@@ -35,9 +35,9 @@ class ZoneControls {
     this.activeStateTopic = `irrigctl/zone/${this.index}/active`;
     this.inUseStateTopic = `irrigctl/zone/${this.index}/inUse`;
 
-    this.log.info(`setting up: name=${this.name}, subType=${subType}`);
-    this.log.info('activeStateTopic:', this.activeStateTopic);
-    this.log.info('inUseStateTopic:', this.inUseStateTopic);
+    this.log.debug(`setting up: name=${this.name}, subType=${subType}`);
+    this.log.debug('activeStateTopic:', this.activeStateTopic);
+    this.log.debug('inUseStateTopic:', this.inUseStateTopic);
 
     this.mqttClient.on('connect', this.subscribeToMqttTopics.bind(this));
     this.mqttClient.on('message', this.handleIncomintMqttMessage.bind(this));
@@ -61,11 +61,11 @@ class ZoneControls {
 
     this.valveService.getCharacteristic(this.platform.Characteristic.Active)
       .onGet(async () => {
-        this.log.info('getActive');
+        this.log.debug('getActive');
         return toActiveValue(this.active, this.platform);
       })
       .onSet(async (value: CharacteristicValue) => {
-        this.log.info('setActive:', value as string);
+        this.log.debug('setActive:', value as string);
 
         this.active = value as boolean;
 
@@ -74,19 +74,19 @@ class ZoneControls {
 
     this.valveService.getCharacteristic(this.platform.Characteristic.InUse)
       .onGet(async () => {
-        this.log.info('getInUse');
+        this.log.debug('getInUse');
         return toInUseValue(this.inUse, this.platform);
       });
 
     this.valveService.getCharacteristic(this.platform.Characteristic.ValveType)
       .onGet(async () => {
-        this.log.info('getValveType');
+        this.log.debug('getValveType');
         return this.platform.Characteristic.ValveType.GENERIC_VALVE;
       });
   }
 
   subscribeToMqttTopics(): void {
-    this.log.info('subscribing to MQTT topics');
+    this.log.debug('subscribing to MQTT topics');
     this.mqttClient.subscribe(this.activeStateTopic);
     this.mqttClient.subscribe(this.inUseStateTopic);
   }
@@ -94,13 +94,13 @@ class ZoneControls {
   handleIncomintMqttMessage(topic: string, payload: Buffer): void {
     if (topic.toLowerCase() === this.activeStateTopic.toLocaleLowerCase()) {
       this.active = Number.parseInt(payload.toString()) === 1;
-      this.log.info(`this.active updated: ${this.active}`);
+      this.log.debug(`this.active updated: ${this.active}`);
     } else if (topic.toLowerCase() === this.inUseStateTopic.toLocaleLowerCase()) {
       this.inUse = Number.parseInt(payload.toString()) === 1;
-      this.log.info(`this.inUse updated: ${this.inUse}`);
+      this.log.debug(`this.inUse updated: ${this.inUse}`);
     }
 
-    this.log.info(`this.active=${this.active}, this.inUse=${this.inUse}`);
+    this.log.debug(`this.active=${this.active}, this.inUse=${this.inUse}`);
 
     this.valveService.updateCharacteristic(this.platform.Characteristic.Active, toActiveValue(this.active, this.platform));
     this.valveService.updateCharacteristic(this.platform.Characteristic.InUse, toInUseValue(this.inUse, this.platform));
@@ -123,7 +123,7 @@ export class IrrigationSystemAccessory {
   ) {
     this.log = new CategoryLogger(platform.log, `IrrigationSystem(${this.accessory.displayName})`);
 
-    this.log.info(`connecting to MQTT broker: url=${this.config.mqttBrokerUrl}`);
+    this.log.debug(`connecting to MQTT broker: url=${this.config.mqttBrokerUrl}`);
     this.mqttClient = mqtt.connect(this.config.mqttBrokerUrl, {
       username: this.config.mqttUsername,
       password: this.config.mqttPassword,
@@ -162,12 +162,12 @@ export class IrrigationSystemAccessory {
   }
 
   subscribeToMqttTopics(): void {
-    this.log.info('subscribing to MQTT topics');
+    this.log.debug('subscribing to MQTT topics');
     this.mqttClient.subscribe('irrigctl/pump/1/active');
   }
 
   handleIncomintMqttMessage(topic: string, payload: Buffer): void {
-    this.log.info(`MQTT message arrived: topic=${topic}, payload=${payload.toString()}`);
+    this.log.debug(`MQTT message arrived: topic=${topic}, payload=${payload.toString()}`);
 
     if (topic.toLowerCase() === 'irrigctl/pump/1/active') {
       this.inUse = Number.parseInt(payload.toString()) === 1;
@@ -196,12 +196,12 @@ export class IrrigationSystemAccessory {
     let configuredName = '';
 
     if (this.config.zones !== undefined) {
-      this.log.info('config.zones:', this.config.zones);
+      this.log.debug('config.zones:', this.config.zones);
 
       this.config.zones.forEach(z => {
         if (z.number === zone) {
           configuredName = z.configuredName;
-          this.log.info(`using configured name for zone ${zone}: ${configuredName}`);
+          this.log.debug(`using configured name for zone ${zone}: ${configuredName}`);
         }
       });
     }

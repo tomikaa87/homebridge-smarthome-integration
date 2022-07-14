@@ -70,7 +70,7 @@ export class ThermostatAccessory {
     }
 
     subscribeToMqttTopics(): void {
-      this.log.info('subscribeToMqttTopics');
+      this.log.debug('subscribeToMqttTopics');
       this.mqttClient.subscribe('thermostat/temp/current');
       this.mqttClient.subscribe('thermostat/temp/active');
       this.mqttClient.subscribe('thermostat/heating/active');
@@ -83,19 +83,19 @@ export class ThermostatAccessory {
 
       if (topic.toLowerCase() === 'thermostat/temp/current') {
         this.states.currentTemperature = Number.parseFloat(payload.toString());
-        this.log.info(`handleIncomingMqttMessage: currentTemperature=${this.states.currentTemperature}`);
+        this.log.debug(`handleIncomingMqttMessage: currentTemperature=${this.states.currentTemperature}`);
         this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, this.states.currentTemperature);
       }
 
       if (topic.toLowerCase() === 'thermostat/temp/active') {
         this.states.targetTemperature = Number.parseFloat(payload.toString());
-        this.log.info(`handleIncomingMqttMessage: targetTemperature=${this.states.targetTemperature}`);
+        this.log.debug(`handleIncomingMqttMessage: targetTemperature=${this.states.targetTemperature}`);
         this.service.updateCharacteristic(this.platform.Characteristic.TargetTemperature, this.states.targetTemperature);
       }
 
       if (topic.toLowerCase() === 'thermostat/heating/active') {
         this.states.heatingActive = Number.parseInt(payload.toString()) === 1;
-        this.log.info(`handleIncomingMqttMessage: heatingActive=${this.states.heatingActive}`);
+        this.log.debug(`handleIncomingMqttMessage: heatingActive=${this.states.heatingActive}`);
         this.service.updateCharacteristic(
           this.platform.Characteristic.CurrentHeatingCoolingState,
           this.getHeatingState(this.states.heatingActive),
@@ -104,37 +104,37 @@ export class ThermostatAccessory {
 
       if (topic.toLowerCase() === 'thermostat/heating/mode') {
         this.states.heatingMode = Number.parseInt(payload.toString());
-        this.log.info(`handleIncomingMqttMessage: heatingMode=${this.states.heatingMode}`);
+        this.log.debug(`handleIncomingMqttMessage: heatingMode=${this.states.heatingMode}`);
         const state = this.getTargetHeatingStateFromMode(this.states.heatingMode);
         this.service.updateCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState, state);
       }
 
       if (topic.toLowerCase() === 'thermostat/boost/active') {
         this.states.boostActive = Number.parseInt(payload.toString()) === 1;
-        this.log.info(`handleIncomingMqttMessage: boostActive=${this.states.boostActive}`);
+        this.log.debug(`handleIncomingMqttMessage: boostActive=${this.states.boostActive}`);
         this.boostSwitchService.updateCharacteristic(this.platform.Characteristic.On, this.states.boostActive);
       }
     }
 
     async getCurrentTemperature(): Promise<CharacteristicValue> {
-      this.log.info(`getCurrentTemperature: ${this.states.currentTemperature} C`);
+      this.log.debug(`getCurrentTemperature: ${this.states.currentTemperature} C`);
       return this.states.currentTemperature;
     }
 
     async getTargetTemperature(): Promise<CharacteristicValue> {
-      this.log.info(`getTargetTemperature: ${this.states.targetTemperature}`);
+      this.log.debug(`getTargetTemperature: ${this.states.targetTemperature}`);
       return this.states.targetTemperature;
     }
 
     async setTargetTemperature(value: CharacteristicValue) {
       this.states.targetTemperature = value as number;
-      this.log.info(`setTargetTemperature: ${this.states.targetTemperature}`);
+      this.log.debug(`setTargetTemperature: ${this.states.targetTemperature}`);
 
       this.mqttClient.publish('thermostat/temp/active/set', this.states.targetTemperature.toString());
     }
 
     async getCurrentHeatingState(): Promise<CharacteristicValue> {
-      this.log.info(`getCurrentHeatingState: ${this.states.heatingActive}`);
+      this.log.debug(`getCurrentHeatingState: ${this.states.heatingActive}`);
       return this.getHeatingState(this.states.heatingActive);
     }
 
@@ -146,13 +146,13 @@ export class ThermostatAccessory {
       }
 
       this.states.heatingMode = this.getHeatingModeFromTargetState(allowedState);
-      this.log.info(`setHeatingMode: ${this.states.heatingMode}`);
+      this.log.debug(`setHeatingMode: ${this.states.heatingMode}`);
 
       this.mqttClient.publish('thermostat/heating/mode/set', this.states.heatingMode.toString());
     }
 
     async getTargetHeatingState(): Promise<CharacteristicValue> {
-      this.log.info(`getTargetHeatingState: ${this.states.heatingMode}`);
+      this.log.debug(`getTargetHeatingState: ${this.states.heatingMode}`);
       const state = this.getTargetHeatingStateFromMode(this.states.heatingMode);
       return state;
     }
@@ -183,13 +183,13 @@ export class ThermostatAccessory {
     }
 
     async getBoostSwitchOn(): Promise<CharacteristicValue> {
-      this.log.info(`getBoostSwitchOn: ${this.states.boostActive}`);
+      this.log.debug(`getBoostSwitchOn: ${this.states.boostActive}`);
       return this.states.boostActive;
     }
 
     async setBoostSwitchOn(value: CharacteristicValue) {
       this.states.boostActive = value as boolean;
-      this.log.info(`setBoostSwitchOn: ${this.states.boostActive}`);
+      this.log.debug(`setBoostSwitchOn: ${this.states.boostActive}`);
 
       this.mqttClient.publish('thermostat/boost/active/set', this.states.boostActive ? '1' : '0');
     }
