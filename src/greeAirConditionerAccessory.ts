@@ -294,7 +294,7 @@ export class GreeAirConditionerAccessory {
     const params = this.device.get_params();
 
     if (params === undefined) {
-      this.log.warn('cannot read params');
+      // this.log.warn('cannot read params');
       return;
     }
 
